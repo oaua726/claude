@@ -57,12 +57,11 @@ HELP_TEXT = (
     "Or send 'list' to see this menu again."
 )
 
-UPLOAD_DIR = Path(tempfile.gettempdir()) / "line_stickers"
+UPLOAD_DIR = Path(os.environ.get("STICKER_DIR", str(Path(tempfile.gettempdir()) / "line_stickers")))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def _sticker_url(name: str) -> str:
-    """Return the public URL for a sticker image."""
     base = os.environ.get("BASE_URL", "").rstrip("/")
     return f"{base}/stickers/{name}.png"
 
@@ -74,6 +73,16 @@ def _generate_and_save(key: str) -> Path:
         img = draw_fn()
         img.save(path, "PNG")
     return path
+
+
+def _warmup():
+    """Pre-generate all stickers at startup."""
+    for key in STICKERS:
+        _generate_and_save(key)
+    print(f"[startup] {len(STICKERS)} stickers ready in {UPLOAD_DIR}")
+
+
+_warmup()
 
 
 @app.route("/callback", methods=["POST"])
