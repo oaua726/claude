@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: line-sticker-bot
+    name: line-claude-bot
     runtime: docker
     envVars:
       - key: LINE_CHANNEL_SECRET
         sync: false
       - key: LINE_CHANNEL_ACCESS_TOKEN
         sync: false
-      - key: BASE_URL
+      - key: ANTHROPIC_API_KEY
         sync: false
