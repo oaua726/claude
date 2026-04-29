@@ -35,6 +35,11 @@ from generate_stickers import (
 
 app = Flask(__name__)
 
+_required = ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET"]
+_missing = [k for k in _required if not os.environ.get(k)]
+if _missing:
+    raise RuntimeError(f"Missing required env vars: {', '.join(_missing)}")
+
 configuration = Configuration(access_token=os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
 

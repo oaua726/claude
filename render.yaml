@@ -1,9 +1,7 @@
 services:
   - type: web
     name: line-sticker-bot
-    runtime: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 2 app:app
+    runtime: docker
     envVars:
       - key: LINE_CHANNEL_SECRET
         sync: false
