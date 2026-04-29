@@ -1,7 +1,4 @@
 import os
-import hashlib
-import hmac
-import base64
 import tempfile
 from pathlib import Path
 
@@ -15,7 +12,6 @@ from linebot.v3.messaging import (
     ApiClient,
     Configuration,
     MessagingApi,
-    MessagingApiBlob,
     ReplyMessageRequest,
     TextMessage,
     ImageMessage,
@@ -80,14 +76,9 @@ def _generate_and_save(key: str) -> Path:
     return path
 
 
-def _warmup():
-    """Pre-generate all stickers at startup."""
-    for key in STICKERS:
-        _generate_and_save(key)
-    print(f"[startup] {len(STICKERS)} stickers ready in {UPLOAD_DIR}")
-
-
-_warmup()
+@app.route("/health")
+def health():
+    return "OK"
 
 
 @app.route("/callback", methods=["POST"])
@@ -124,7 +115,6 @@ def handle_message(event: MessageEvent):
             return
 
         if text in STICKERS:
-            label, _ = STICKERS[text]
             _generate_and_save(text)
             image_url = _sticker_url(text)
             line_bot_api.reply_message(

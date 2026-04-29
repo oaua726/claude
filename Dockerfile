@@ -13,4 +13,4 @@ COPY . .
 
 ENV PORT=8000
 
-CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 app:app
+CMD gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 120 app:app
