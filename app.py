@@ -31,13 +31,18 @@ from generate_stickers import (
 
 app = Flask(__name__)
 
-_required = ["LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET"]
-_missing = [k for k in _required if not os.environ.get(k)]
-if _missing:
-    raise RuntimeError(f"Missing required env vars: {', '.join(_missing)}")
+# Use .get() so missing env vars don't crash gunicorn at startup.
+# LINE_CHANNEL_ACCESS_TOKEN and LINE_CHANNEL_SECRET must be set in
+# the Render dashboard (Environment tab) before the bot can work.
+_access_token = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+_channel_secret = os.environ.get("LINE_CHANNEL_SECRET", "")
 
-configuration = Configuration(access_token=os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
-handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
+if not _access_token or not _channel_secret:
+    print("WARNING: LINE_CHANNEL_ACCESS_TOKEN or LINE_CHANNEL_SECRET not set. "
+          "Webhook calls will fail until these are configured in Render's dashboard.")
+
+configuration = Configuration(access_token=_access_token)
+handler = WebhookHandler(_channel_secret)
 
 STICKERS = {
     "planet":    ("Neon Planet",    draw_neon_planet),
@@ -76,6 +81,7 @@ def _generate_and_save(key: str) -> Path:
     return path
 
 
+@app.route("/")
 @app.route("/health")
 def health():
     return "OK"
