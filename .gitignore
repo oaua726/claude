@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+generated_stickers/
+*.db
+*.db-shm
+*.db-wal
