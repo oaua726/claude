@@ -1,95 +1,82 @@
 """
-Claude-powered sticker designer.
-Interprets natural language prompts and maps them to sticker design parameters.
+Claude as creative director.
+
+Claude has no image-generation API of its own. Its job here is to turn a vague
+user idea (in any language) into a world-class, production-ready prompt for a
+text-to-image model, tuned specifically for die-cut stickers that sell on
+marketplaces like Etsy and Redbubble.
 """
 
-import json
-import re
 import anthropic
 from pydantic import BaseModel
 from typing import Literal
 
 
-class StickerDesignParams(BaseModel):
-    design_type: Literal[
-        "neon_planet", "retro_rocket", "pixel_moon",
-        "neon_starfield", "cyber_portal", "arcade_badge",
-        "space_cat", "y2k_burst"
+class StickerBrief(BaseModel):
+    """Structured creative brief produced by Claude."""
+    title: str
+    image_prompt: str          # the prompt sent to the image model
+    negative_prompt: str       # what to avoid
+    style: Literal[
+        "kawaii", "retro_vintage", "y2k_chrome", "minimal_line",
+        "watercolor", "bold_cartoon", "vaporwave", "botanical"
     ]
-    primary_color: tuple[int, int, int]
-    accent_color: tuple[int, int, int]
-    mood: Literal["energetic", "calm", "mysterious", "playful", "bold"]
-    text_overlay: str | None = None
-    reasoning: str
+    subject: str
+    palette: list[str]         # human-readable color names
+    suggested_tags: list[str]  # marketplace SEO tags
+    reasoning: str             # why these choices sell
 
 
-DESIGN_SYSTEM_PROMPT = """You are an expert sticker designer who maps user requests to sticker parameters.
+SYSTEM_PROMPT = """You are a world-class sticker designer and prompt engineer. \
+You have sold thousands of die-cut stickers on Etsy and Redbubble and know \
+exactly what converts.
 
-Available design types and their characteristics:
-- neon_planet: Space planet with rings, cosmic atmosphere, glow effects
-- retro_rocket: Vintage rocket ship with fins, porthole, exhaust flames
-- pixel_moon: Crescent moon with pixel art style, craters
-- neon_starfield: Radial burst of light rays, central star, cosmic energy
-- cyber_portal: Concentric rings, targeting reticle, futuristic portal
-- arcade_badge: Game-style badge with coin/token, retro gaming aesthetics
-- space_cat: Cat with space helmet, whiskers, antenna, cosmic vibe
-- y2k_burst: Starburst explosion, Y2K aesthetic, bold typography
+Your task: take a user's rough idea (it may be in Japanese or any language) and \
+produce a single, production-ready prompt for a modern text-to-image model \
+(FLUX / SDXL class).
 
-Color palette available (use RGB tuples):
-- Neon pink: (255, 0, 110)
-- Electric cyan: (0, 245, 255)
-- Deep purple: (123, 47, 190)
-- Neon green: (57, 255, 20)
-- Retro yellow: (255, 230, 0)
-- Hot magenta: (255, 0, 255)
-- Dark navy: (13, 13, 43)
-- Orange neon: (255, 100, 0)
+Hard requirements for every prompt you write:
+- It MUST describe a die-cut sticker: a single centered subject, a thick clean \
+white sticker border/outline, and a plain white background (so the background \
+can be cut out to transparent).
+- Use concrete art-direction language the image model understands: art style, \
+line weight, shading, finish (matte/glossy), lighting, composition.
+- Be vivid and specific about subject and color palette. Avoid vague words.
+- No text in the image UNLESS the user explicitly asks for a word/phrase; if \
+they do, specify it in quotes and keep it short.
+- Aim for designs with proven commercial appeal (cute, nostalgic, witty, \
+aesthetic) — not generic clip-art.
 
-Match the user's request to the most appropriate design type and colors.
-For text_overlay, only include if user explicitly requests text (max 8 chars).
-"""
+The negative_prompt should suppress: blurry, low-res, watermark, extra limbs, \
+busy background, photo-realistic clutter, jpeg artifacts, multiple subjects.
+
+Choose the single style that best fits the idea and the current market."""
 
 
-def interpret_prompt(user_prompt: str) -> StickerDesignParams:
-    """Use Claude to interpret a natural language prompt into design parameters."""
+def design_sticker_brief(user_idea: str) -> StickerBrief:
+    """Use Claude (claude-opus-4-7) to produce a structured sticker brief."""
     client = anthropic.Anthropic()
 
-    response = client.messages.create(
+    response = client.messages.parse(
         model="claude-opus-4-7",
-        max_tokens=1024,
+        max_tokens=2048,
         thinking={"type": "adaptive"},
-        system=DESIGN_SYSTEM_PROMPT,
+        output_config={"effort": "high"},
+        system=SYSTEM_PROMPT,
         messages=[
             {
                 "role": "user",
-                "content": f"""Interpret this sticker request and return JSON with design parameters:
-
-User request: "{user_prompt}"
-
-Return ONLY valid JSON with these fields:
-{{
-  "design_type": "one of the 8 types",
-  "primary_color": [r, g, b],
-  "accent_color": [r, g, b],
-  "mood": "energetic|calm|mysterious|playful|bold",
-  "text_overlay": null or "SHORT TEXT",
-  "reasoning": "brief explanation"
-}}"""
+                "content": (
+                    "Create a sticker design brief for this idea. "
+                    "Return the structured fields.\n\n"
+                    f'Idea: "{user_idea}"'
+                ),
             }
-        ]
+        ],
+        output_format=StickerBrief,
     )
 
-    text = next(b.text for b in response.content if b.type == "text")
-
-    # Extract JSON from response
-    json_match = re.search(r'\{.*\}', text, re.DOTALL)
-    if not json_match:
-        raise ValueError(f"No JSON found in Claude response: {text}")
-
-    data = json.loads(json_match.group())
-
-    # Convert color lists to tuples
-    data["primary_color"] = tuple(data["primary_color"])
-    data["accent_color"] = tuple(data["accent_color"])
-
-    return StickerDesignParams(**data)
+    brief = response.parsed_output
+    if brief is None:
+        raise ValueError("Claude did not return a valid sticker brief")
+    return brief

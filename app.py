@@ -23,8 +23,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, EmailStr
 
 import credit_manager as cm
-from claude_designer import interpret_prompt
-from sticker_service import generate_sticker, OUTPUT_DIR
+from sticker_service import create_sticker, OUTPUT_DIR
 
 # Initialize DB on startup
 cm.init_db()
@@ -180,33 +179,29 @@ async def generate(req: GenerateRequest, user: cm.User = Depends(get_current_use
             }
         )
 
-    # Interpret prompt with Claude
-    try:
-        design_params = interpret_prompt(req.prompt)
-    except Exception as e:
-        # Refund the credit if Claude fails
-        cm.add_credits(user.user_id, "starter")  # Not ideal; in prod use transaction
-        raise HTTPException(status_code=500, detail=f"AI interpretation failed: {str(e)}")
-
-    # Generate the sticker
     sticker_id = str(uuid.uuid4())
     filename = f"{sticker_id}.png"
 
+    # Claude designs the brief, image backend renders it
     try:
-        output_path = generate_sticker(design_params, filename)
+        result = create_sticker(req.prompt, filename)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Sticker generation failed: {str(e)}")
+        cm.refund_credit(user.user_id)
+        raise HTTPException(status_code=502, detail=f"Generation failed: {str(e)}")
 
-    # Record the generation
-    cm.record_generation(user.user_id, req.prompt, design_params.design_type, output_path)
+    cm.record_generation(user.user_id, req.prompt, result["style"], result["path"])
 
     return {
         "sticker_id": sticker_id,
-        "design_type": design_params.design_type,
-        "mood": design_params.mood,
-        "reasoning": design_params.reasoning,
+        "title": result["title"],
+        "style": result["style"],
+        "subject": result["subject"],
+        "palette": result["palette"],
+        "suggested_tags": result["suggested_tags"],
+        "reasoning": result["reasoning"],
         "download_url": f"/api/stickers/{sticker_id}",
         "credits_remaining": user.credits - 1,
+        "preview_is_mock": result["mock"],
     }
 
 

@@ -160,6 +160,15 @@ def deduct_credit(user_id: str) -> bool:
         return True
 
 
+def refund_credit(user_id: str) -> None:
+    """Return one credit when generation fails after deduction."""
+    with get_db() as conn:
+        conn.execute(
+            "UPDATE users SET credits = credits + ?, total_generated = total_generated - 1 WHERE user_id = ?",
+            (CREDITS_PER_STICKER, user_id)
+        )
+
+
 def record_generation(user_id: str, prompt: str, design_type: str, output_path: str) -> str:
     gen_id = str(uuid.uuid4())
     with get_db() as conn:
