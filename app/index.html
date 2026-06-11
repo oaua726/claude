@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Sticker Studio — レトロフューチャーステッカーメーカー</title>
+<meta name="description" content="ブラウザだけでネオン×レトロフューチャーなステッカー・アイコンが作れるメーカーアプリ。SNSアイコン、配信素材、グッズデザインに。">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="logo">
+    <span class="logo-icon">★</span>
+    <h1>Neon Sticker Studio</h1>
+  </div>
+  <p class="tagline">レトロフューチャーなステッカーを、ブラウザだけで。</p>
+  <a class="pro-badge" href="#pro" id="proLink">✦ PRO にアップグレード</a>
+</header>
+
+<main class="studio">
+  <section class="canvas-area">
+    <div class="canvas-frame">
+      <canvas id="preview" width="800" height="800"></canvas>
+    </div>
+    <div class="canvas-actions">
+      <button id="randomBtn" class="btn btn-secondary">🎲 おまかせ生成</button>
+      <button id="downloadBtn" class="btn btn-primary">⬇ PNG ダウンロード</button>
+    </div>
+    <p class="free-note" id="freeNote">無料版：512px・透かし入り / <a href="#pro">PRO</a>：1024px・透かしなし</p>
+  </section>
+
+  <section class="controls">
+    <div class="control-group">
+      <label>テンプレート</label>
+      <div class="template-grid" id="templateGrid"></div>
+    </div>
+
+    <div class="control-group">
+      <label>カラー</label>
+      <div class="color-row">
+        <div class="color-item">
+          <input type="color" id="mainColor" value="#0d0d2b">
+          <span>ベース</span>
+        </div>
+        <div class="color-item">
+          <input type="color" id="accentColor" value="#00f5ff">
+          <span>アクセント</span>
+        </div>
+        <div class="color-item">
+          <input type="color" id="glowColor" value="#ff006e">
+          <span>グロー</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label for="textTop">上テキスト</label>
+      <input type="text" id="textTop" maxlength="14" placeholder="例: INSERT COIN">
+      <label for="textBottom">下テキスト</label>
+      <input type="text" id="textBottom" maxlength="14" placeholder="例: PLAY AGAIN">
+    </div>
+
+    <div class="control-group">
+      <label>エフェクト</label>
+      <div class="toggle-row">
+        <label class="toggle"><input type="checkbox" id="starsToggle" checked><span>背景の星</span></label>
+        <label class="toggle"><input type="checkbox" id="glowToggle" checked><span>ネオングロー</span></label>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label for="sizeSelect">書き出しサイズ</label>
+      <select id="sizeSelect">
+        <option value="512">512 × 512（無料）</option>
+        <option value="800" data-pro="1">800 × 800（PRO）</option>
+        <option value="1024" data-pro="1">1024 × 1024（PRO）</option>
+      </select>
+    </div>
+  </section>
+</main>
+
+<section class="pro-section" id="pro">
+  <h2>✦ Neon Sticker Studio PRO</h2>
+  <p>買い切り ¥980 で、ずっと使える。</p>
+  <ul>
+    <li>✅ 透かしなしの高解像度PNG（1024px）書き出し</li>
+    <li>✅ 全テンプレート・全カラーパレット開放</li>
+    <li>✅ 商用利用OK（LINEスタンプ・グッズ・配信素材）</li>
+  </ul>
+  <!-- ここに Stripe Payment Link / Gumroad / BOOTH のURLを設定してください -->
+  <a class="btn btn-primary btn-large" id="buyBtn" href="#" data-payment-link="">PRO を購入する（¥980 買い切り）</a>
+  <p class="license-row">購入済みの方：<input type="text" id="licenseInput" placeholder="ライセンスキーを入力"><button class="btn btn-secondary" id="licenseBtn">認証</button></p>
+</section>
+
+<footer class="site-footer">
+  <p>© 2026 Neon Sticker Studio — 作成したステッカーの著作権は作成者に帰属します。</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
