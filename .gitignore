@@ -1,0 +1,5 @@
+# Obsidian volatile state (keep app.json, ignore per-machine/runtime files)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
