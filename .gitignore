@@ -1,0 +1,12 @@
+# Obsidian のワークスペース設定（個人環境依存のためコミットしない）
+vault/.obsidian/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
