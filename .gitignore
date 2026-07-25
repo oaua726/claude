@@ -1,0 +1,9 @@
+# Generated stickers — rebuild with `python -m stickers`
+/output/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
