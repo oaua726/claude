@@ -15,7 +15,7 @@
 
 | ファイル | 内容 |
 |---|---|
-| [docs/gyomu-map.md](docs/gyomu-map.md) | 業務マップ、自動化候補17個、優先順位 |
+| [docs/gyomu-map.md](docs/gyomu-map.md) | 業務マップ、自動化候補16個、優先順位 |
 | [docs/checklists.md](docs/checklists.md) | 書類・送信前チェックリスト(申請/銀行/上棟/見積/引き継ぎ) |
 | [docs/unyo-rule.md](docs/unyo-rule.md) | ファイル命名規則、毎日のルーチン、AIに任せる範囲の線引き |
 | [docs/next-steps.md](docs/next-steps.md) | 次に作るものの仕様書(Notion案件DB、週次レビュー自動化) |
@@ -27,6 +27,18 @@
 - カレンダー登録・Notion追加は都度確認してから
 - 詳細は [docs/unyo-rule.md](docs/unyo-rule.md)
 
-## その他
+## リポジトリ構成
 
-- `generate_stickers.py` — レトロフューチャー系ステッカー生成(個人制作)。`pip install -r requirements.txt` → `python generate_stickers.py` で `output/` に8枚生成
+```
+.
+├── .claude/skills/     Skill定義(Claude Codeが自動で読み込む)
+│   ├── asa-brief/
+│   ├── kigen/
+│   └── mail-draft/     SKILL.md + templates.md(文例集)
+├── docs/               業務マップ・チェックリスト・運用ルール・仕様書
+└── README.md
+```
+
+このリポジトリは**業務用ドキュメントとSkillのみ**を置く。個人制作のスクリプトや
+生成物(画像など)は含めない。認証情報(`.env`、各種トークンJSON)は
+`.gitignore` 済みだが、そもそもコミットしないこと。
