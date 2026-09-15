@@ -30,3 +30,4 @@
 ## その他
 
 - `generate_stickers.py` — レトロフューチャー系ステッカー生成(個人制作)。`pip install -r requirements.txt` → `python generate_stickers.py` で `output/` に8枚生成
+- [`games/polyrun/`](games/polyrun/) — ローポリ無限ランナー「POLYRUN」(個人制作)。`games/polyrun/index.html` をブラウザで開くだけで遊べる
