@@ -80,6 +80,19 @@ body{
 #mute.off i{background:var(--dim);box-shadow:none}
 
 /* ---------- floating score pops ---------- */
+/* ---------- event zones ---------- */
+#zoneTint{position:absolute;inset:0;pointer-events:none;opacity:0;color:var(--volt);
+  transition:opacity .45s;box-shadow:inset 0 0 130px 24px currentColor}
+#zoneUi{pointer-events:none;display:flex;justify-content:center;align-items:flex-start}
+.zone-card{margin-top:74px;text-align:center;background:rgba(11,7,20,.62);
+  border:1px solid currentColor;padding:9px 20px 11px;clip-path:var(--cham-s);
+  min-width:210px;animation:zoneIn .4s ease-out}
+@keyframes zoneIn{0%{opacity:0;transform:translateY(-16px) scale(.94)}100%{opacity:1;transform:none}}
+.zone-n{font-size:19px;line-height:1.1;color:currentColor;letter-spacing:.04em}
+.zone-j{font-size:11px;letter-spacing:.2em;color:rgba(247,239,230,.8);margin-top:3px}
+.zone-bar{height:3px;background:rgba(247,239,230,.2);margin-top:9px}
+.zone-bar i{display:block;height:100%;width:100%;background:currentColor;transform-origin:left}
+
 #pops{position:absolute;inset:0;pointer-events:none}
 .pop{position:absolute;left:50%;top:44%;white-space:nowrap;font-size:20px;
   letter-spacing:.04em;text-shadow:0 2px 10px rgba(11,7,20,.9);animation:popUp .95s ease-out forwards}
@@ -124,6 +137,37 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
 .best b{font-size:26px;color:var(--gold);letter-spacing:0}
 #tip{margin:16px 0 0;font-size:11.5px;line-height:1.7;color:var(--dim);
   border-left:2px solid var(--volt);padding-left:11px}
+/* ---------- sections: missions, skins ---------- */
+.panel.home{width:min(780px,100%);display:flex;flex-direction:column}
+.panel.home>.home-cols{order:3}
+.panel.home>#btnStart{order:2}
+@media (min-width:720px){
+  .panel.home>.home-cols{order:2}
+  .panel.home>#btnStart{order:3}
+}
+.home-cols{display:grid;grid-template-columns:1fr;gap:4px}
+@media (min-width:720px){ .home-cols{grid-template-columns:1fr 1fr;gap:28px} }
+.sect{margin-top:18px;border-top:1px solid rgba(247,239,230,.14);padding-top:15px}
+.sh{margin:0 0 11px;font-size:10px;letter-spacing:.24em;color:var(--volt);font-weight:700}
+.sh em{font-style:normal;color:var(--dim);letter-spacing:.1em;margin-left:6px}
+.miss{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.miss li{display:flex;gap:11px;align-items:center;font-size:12.5px;line-height:1.5;
+  color:rgba(247,239,230,.8)}
+.miss i{flex:0 0 14px;width:14px;height:14px;transform:rotate(45deg);
+  border:1.5px solid rgba(247,239,230,.3)}
+.miss li.on{color:var(--gold)}
+.miss li.on i{background:var(--gold);border-color:var(--gold);box-shadow:0 0 10px rgba(255,209,102,.6)}
+.skins{display:flex;gap:10px;flex-wrap:wrap}
+.skin{width:44px;height:44px;border:2px solid rgba(247,239,230,.18);cursor:pointer;
+  padding:0;clip-path:var(--cham-s);position:relative;font:inherit}
+.skin.sel{border-color:var(--volt);box-shadow:0 0 0 2px rgba(110,231,249,.28)}
+.skin.lock{border-color:rgba(247,239,230,.12)}
+.skin.lock::before{content:'';position:absolute;inset:0;background:rgba(11,7,20,.74)}
+.skin.lock::after{content:'';position:absolute;left:5px;right:5px;top:50%;height:2px;
+  margin-top:-1px;background:rgba(247,239,230,.6);transform:rotate(-45deg)}
+.skin:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.skin-note{margin:11px 0 0;font-size:11.5px;line-height:1.6;color:var(--dim);min-height:1.6em}
+.skin-note b{color:var(--gold);font-weight:700}
 #cardWrap{margin-top:18px}
 #cardImg{display:block;width:100%;aspect-ratio:16/9;max-width:100%;
   border:1px solid rgba(247,239,230,.18);background:var(--plum)}
@@ -145,6 +189,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
   <canvas id="gl"></canvas>
   <div id="grain"></div>
   <div id="flash"></div>
+  <div id="zoneTint"></div>
 
   <!-- HUD -->
   <div class="layer" id="hud" hidden>
@@ -170,26 +215,50 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
     </div>
   </div>
 
+  <div class="layer" id="zoneUi" hidden>
+    <div class="zone-card" id="zoneCard">
+      <div class="zone-n disp" id="zoneName">LOW GRAVITY</div>
+      <div class="zone-j" id="zoneJp">低重力</div>
+      <div class="zone-bar"><i id="zoneFill"></i></div>
+    </div>
+  </div>
+
   <div id="pops"></div>
   <div id="go" hidden><span class="disp">GO!</span></div>
 
   <!-- Title -->
   <div class="layer screen" id="title">
-    <div class="panel">
+    <div class="panel home">
       <p class="eyebrow">LOW-POLY ENDLESS RUN</p>
       <h1 class="disp">POLYRUN</h1>
       <p class="tagline">
         夕暮れ・ネオン・夜明け。<strong>650m ごとに景色が変わる</strong>ローポリ都市を、
-        1匹のキツネが全力で駆け抜ける。<br>
-        障害物を<strong>ギリギリで</strong>かわすほどコンボが伸びる。ぶつかったら即終了。
+        1匹のキツネが全力で駆け抜ける。障害物を<strong>ギリギリで</strong>かわすほどコンボが伸び、
+        道中では<strong>特殊ゾーン</strong>がルールを書き換える。ぶつかったら即終了。
       </p>
-      <dl class="keys">
-        <dt>KEYBOARD</dt><dd>← → 移動 / SPACE・↑ ジャンプ / ↓ スライド</dd>
-        <dt>TOUCH</dt><dd>左右スワイプで移動 / タップ・上スワイプでジャンプ / 下スワイプでスライド</dd>
-        <dt>NEAR MISS</dt><dd>障害物をすれすれで通過するとスローモーション＋ボーナス</dd>
-      </dl>
-      <div class="best"><span>BEST</span><b class="mono" id="uBest">0</b><span id="uRuns"></span></div>
-      <p id="tip"></p>
+      <div class="home-cols">
+        <div>
+          <dl class="keys">
+            <dt>KEYBOARD</dt><dd>← → 移動 / SPACE・↑ ジャンプ / ↓ スライド</dd>
+            <dt>TOUCH</dt><dd>左右スワイプで移動 / タップ・上スワイプでジャンプ / 下スワイプでスライド</dd>
+            <dt>NEAR MISS</dt><dd>障害物をすれすれで通過するとスローモーション＋ボーナス</dd>
+            <dt>ZONE</dt><dd>低重力・密集地帯・左右反転など5種。抜け切るとボーナス</dd>
+          </dl>
+          <div class="sect">
+            <h2 class="sh">FOX<em id="skinCount"></em></h2>
+            <div class="skins" id="skinRow"></div>
+            <p class="skin-note" id="skinNote"></p>
+          </div>
+        </div>
+        <div>
+          <div class="sect" style="margin-top:18px">
+            <h2 class="sh">TODAY'S MISSIONS<em id="dailyCount"></em></h2>
+            <ul class="miss" id="missList"></ul>
+          </div>
+          <div class="best"><span>BEST</span><b class="mono" id="uBest">0</b><span id="uRuns"></span></div>
+          <p id="tip"></p>
+        </div>
+      </div>
       <button class="btn disp" id="btnStart" type="button">START</button>
     </div>
   </div>
@@ -199,6 +268,14 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
     <div class="panel">
       <p class="eyebrow" id="ovEyebrow">RUN COMPLETE</p>
       <h1 class="disp" id="ovTitle" style="font-size:clamp(34px,9vw,58px)">GAME OVER</h1>
+      <div class="sect" id="ovDaily" hidden>
+        <h2 class="sh">MISSION CLEAR</h2>
+        <ul class="miss" id="ovMissList"></ul>
+      </div>
+      <div class="sect" id="ovUnlock" hidden>
+        <h2 class="sh">NEW FOX UNLOCKED</h2>
+        <ul class="miss" id="ovUnlockList"></ul>
+      </div>
       <div id="cardWrap">
         <img id="cardImg" alt="リザルトカード">
         <p class="saveHint">画像を長押し（PC は右クリック）で保存できます。</p>
@@ -244,6 +321,71 @@ var store={
   get:function(k,d){try{var v=localStorage.getItem('polyrun.'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
   set:function(k,v){try{localStorage.setItem('polyrun.'+k,JSON.stringify(v));}catch(e){}}
 };
+
+/* ============================= profile, skins, dailies ============================= */
+var PROF=(function(){
+  var d=store.get('prof',null)||{};
+  return {dist:d.dist|0,runs:d.runs|0,crystals:d.crystals|0,near:d.near|0,
+          zones:d.zones|0,dailies:d.dailies|0,skin:d.skin||'sunset'};
+})();
+function saveProf(){ store.set('prof',PROF); }
+
+var SKINS=[
+  {id:'sunset',name:'SUNSET',fur:0xFF8A4C,dark:0xD1592E,cream:0xF7EFE6,
+   req:null,reqText:'最初から使える'},
+  {id:'frost', name:'FROST', fur:0xDCEBF7,dark:0x7FA9CE,cream:0xFFFFFF,
+   req:function(){return PROF.dist>=3000;},reqText:'累計距離 3,000m',
+   prog:function(){return PROF.dist+' / 3,000m';}},
+  {id:'neon',  name:'NEON',  fur:0xFF4D9D,dark:0x8E2BC4,cream:0x6EE7F9,
+   req:function(){return PROF.near>=100;},reqText:'ニアミス累計 100回',
+   prog:function(){return PROF.near+' / 100回';}},
+  {id:'ember', name:'EMBER', fur:0x2E1C24,dark:0xFF5A1F,cream:0xFFB067,
+   req:function(){return PROF.zones>=25;},reqText:'特殊ゾーン 25回クリア',
+   prog:function(){return PROF.zones+' / 25回';}},
+  {id:'gold',  name:'GOLD',  fur:0xFFD166,dark:0xC08A1E,cream:0xFFF3D0,
+   req:function(){return (store.get('best',0)|0)>=8000;},reqText:'ベストスコア 8,000',
+   prog:function(){return (store.get('best',0)|0)+' / 8,000';}}
+];
+function skinById(id){
+  for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i];
+  return SKINS[0];
+}
+function skinOpen(sk){ return !sk.req || sk.req(); }
+
+/* Missions are scoped to a single run so the goal is always readable mid-race.
+   The day's three are drawn from the date, so every device sees the same set. */
+var MISSIONS=[
+  {id:'near', tiers:[8,12,16],           text:function(n){return 'ニアミス '+n+' 回';},        get:function(){return G.near;}},
+  {id:'dist', tiers:[600,900,1300],      text:function(n){return n+'m 走る';},                 get:function(){return G.dist;}},
+  {id:'cry',  tiers:[22,32,45],          text:function(n){return 'クリスタル '+n+' 個';},      get:function(){return G.crystals;}},
+  {id:'combo',tiers:[6,8,10],            text:function(n){return 'コンボ x'+n+' に到達';},     get:function(){return G.maxCombo;}},
+  {id:'score',tiers:[3000,5000,8000],    text:function(n){return fmt(n)+' 点';},               get:function(){return G.score;}},
+  {id:'zone', tiers:[2,3,4],             text:function(n){return '特殊ゾーンを '+n+' 回クリア';},get:function(){return G.zonesDone;}}
+];
+function missById(id){
+  for(var i=0;i<MISSIONS.length;i++) if(MISSIONS[i].id===id) return MISSIONS[i];
+  return MISSIONS[0];
+}
+function missLabel(e){ var d=missById(e.id); return '1ランで'+d.text(d.tiers[e.tier]); }
+function todayKey(){
+  var d=new Date();
+  return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
+}
+var DAILY=(function(){
+  var key=todayKey(), saved=store.get('daily',null);
+  if(saved&&saved.key===key&&saved.m&&saved.m.length===3) return saved;
+  var r=rng(key), pool=MISSIONS.slice(), picks=[];
+  for(var i=0;i<3;i++){
+    var m=pool.splice(Math.floor(r()*pool.length),1)[0];
+    picks.push({id:m.id,tier:i,done:false});
+  }
+  var d={key:key,m:picks,claimed:false};
+  store.set('daily',d); return d;
+})();
+function dailyCleared(){
+  for(var i=0;i<DAILY.m.length;i++) if(!DAILY.m[i].done) return false;
+  return true;
+}
 
 /* ============================= audio ============================= */
 /* One graph:  sfx -> out -> destination
@@ -306,7 +448,9 @@ var SFX={
   coin:function(c){tone(720+c*58,1120+c*72,0.09,'square',0.075);},
   near:function(){tone(1500,360,0.22,'sine',0.1); noise(0.16,0.06,2200);},
   crash:function(){tone(210,36,0.55,'sawtooth',0.2); noise(0.5,0.26,600);},
-  go:function(){tone(420,640,0.1,'square',0.08); setTimeout(function(){tone(640,980,0.17,'square',0.08);},110);}
+  go:function(){tone(420,640,0.1,'square',0.08); setTimeout(function(){tone(640,980,0.17,'square',0.08);},110);},
+  zone:function(){tone(180,1500,0.55,'sawtooth',0.1); noise(0.45,0.1,3400);},
+  zoneEnd:function(){tone(880,1760,0.2,'square',0.09); setTimeout(function(){tone(1320,1980,0.16,'square',0.07);},90);}
 };
 
 /* ---- bgm: a synthwave loop synthesised note by note, no audio files ----
@@ -688,6 +832,19 @@ var GRAV=-34, JUMP_V=12.7, SLIDE_T=0.62;
 var P_HALF=0.42, P_H=1.5, P_SLIDE_H=0.72;
 var SPD_MIN=17, SPD_MAX=46, COMBO_T=3.0, COMBO_MAX=10;
 
+/* Event zones rewrite one rule for a fixed stretch of road, so no two runs
+   read the same. Each one is announced, colour-coded and scored on exit. */
+var ZONES=[
+  {id:'grav',  name:'LOW GRAVITY', jp:'低重力 — ジャンプが伸びる',   color:'#6EE7F9',len:270,bonus:300},
+  {id:'rush',  name:'CRYSTAL RUSH',jp:'障害物なし — 拾い切れ',       color:'#FFD166',len:230,bonus:250},
+  {id:'gaunt', name:'GAUNTLET',    jp:'密集地帯 — 間隔が詰まる',     color:'#FF4D6D',len:250,bonus:450},
+  {id:'mirror',name:'MIRROR',      jp:'左右反転 — 操作が逆になる',   color:'#B45CE0',len:190,bonus:400},
+  {id:'surge', name:'SPEED SURGE', jp:'加速 — スコア2倍',            color:'#FF7A59',len:260,bonus:350}
+];
+var PIPE=155;   /* metres a freshly spawned row travels before it reaches the fox */
+function zoneIs(id){ return G.zone>=0 && ZONES[G.zone].id===id; }
+function zoneSpawnIs(id){ return G.zoneSpawnIx>=0 && ZONES[G.zoneSpawnIx].id===id; }
+
 /* ============================= game state ============================= */
 var G={};
 function resetGame(){
@@ -700,6 +857,8 @@ function resetGame(){
     state:'menu', dist:0, score:0, speed:SPD_MIN, lane:1, px:0, py:0, vy:0,
     air:false, slideT:0, slideAmt:0, phase:0, combo:1, comboT:0, maxCombo:1, near:0, crystals:0,
     speedPeak:SPD_MIN, shown:false, bdGap:6,
+    zone:-1, zoneLeft:0, lastZone:-1, nextZone:300, zonesDone:0,
+    zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
   };
   applyBiome(0,true);
@@ -707,6 +866,7 @@ function resetGame(){
   player.position.set(0,0,0); player.rotation.set(0,0,0);
   blob.visible=true;
   for(var k=0;k<26;k++) spawnBuilding(-Math.random()*300);
+  if(elZoneUi) hideZoneUi();
 }
 
 /* ============================= spawning ============================= */
@@ -715,23 +875,30 @@ function pickTwoLanes(){
   return [a,b];
 }
 function spawnRow(){
-  var d=G.dist, kinds=['single','single','single'];
-  if(d>110) kinds.push('wlow');
-  if(d>220) kinds.push('double','whigh');
-  if(d>420) kinds.push('double','single');
+  var d=G.dist, floaty=zoneSpawnIs('grav'), dense=zoneSpawnIs('gaunt');
+  var kinds=['single','single','single'];
+  if(floaty) kinds=['single','single','wlow'];          /* no overhangs while airborne is long */
+  else if(dense) kinds=['single','single','single','double'];
+  else {
+    if(d>110) kinds.push('wlow');
+    if(d>220) kinds.push('double','whigh');
+    if(d>420) kinds.push('double','single');
+  }
+  /* no overhangs when the fox is airborne for a long time or rows are packed:
+     a jump already clears low bars, so low+tall stays fair at any density */
+  var types=(floaty||dense)?['low','tall','tall']:['low','high','tall'];
   var kind=kinds[(Math.random()*kinds.length)|0];
-  var freeLane=-1, crystalY=1.0;
+  var freeLane=-1, crystalY=floaty?2.2:1.0;
 
   if(kind==='single'){
     var ln=(Math.random()*3)|0;
-    var types=['low','high','tall'];
     spawnOb(types[(Math.random()*3)|0],LANE_X[ln]);
     var opts=[0,1,2].filter(function(v){return v!==ln;});
     freeLane=opts[(Math.random()*opts.length)|0];
   } else if(kind==='double'){
-    var pair=pickTwoLanes(), types2=['low','high','tall'];
-    spawnOb(types2[(Math.random()*3)|0],LANE_X[pair[0]]);
-    spawnOb(types2[(Math.random()*3)|0],LANE_X[pair[1]]);
+    var pair=pickTwoLanes();
+    spawnOb(types[(Math.random()*3)|0],LANE_X[pair[0]]);
+    spawnOb(types[(Math.random()*3)|0],LANE_X[pair[1]]);
     freeLane=[0,1,2].filter(function(v){return pair.indexOf(v)<0;})[0];
   } else if(kind==='wlow'){
     spawnOb('wlow',0);
@@ -741,9 +908,15 @@ function spawnRow(){
     freeLane=(Math.random()*3)|0; crystalY=0.5;
   }
 
-  if(Math.random()<0.72){
+  if(!dense && Math.random()<0.72){
     var n=3+((Math.random()*3)|0);
     G.crystalQueue={lane:freeLane,y:crystalY,n:n,z:SPAWN_Z-2.5,step:3.1};
+  }
+}
+function spawnCrystalWave(){
+  var lane=(Math.random()*3)|0, n=5+((Math.random()*4)|0);
+  for(var i=0;i<n;i++){
+    spawnCrystal(LANE_X[lane],1.0+Math.sin(i/(n-1)*Math.PI)*1.05,SPAWN_Z-i*2.6);
   }
 }
 function flushCrystals(){
@@ -792,6 +965,38 @@ function nearMiss(){
   flash('#6EE7F9',0.22);
   pop('NEAR MISS +'+pts,'volt');
 }
+/* ---- event zones ---- */
+var elZoneUi=$('#zoneUi'), elZoneCard=$('#zoneCard'), elZoneName=$('#zoneName'),
+    elZoneJp=$('#zoneJp'), elZoneFill=$('#zoneFill'), elZoneTint=$('#zoneTint');
+function hideZoneUi(){
+  elZoneUi.hidden=true; elZoneTint.style.opacity='0';
+}
+function scheduleZone(){
+  var ix=0, guard=0;
+  do{ ix=(Math.random()*ZONES.length)|0; }while(ix===G.lastZone && guard++<8);
+  G.zoneSpawnIx=ix; G.lastZone=ix;
+  G.zoneSpawnLeft=ZONES[ix].len;
+  G.zoneStartAt=G.dist+PIPE;
+  G.zonePending=true;
+}
+function activateZone(){
+  var ix=G.zoneSpawnIx>=0?G.zoneSpawnIx:G.lastZone, z=ZONES[ix];
+  G.zone=ix; G.zoneLeft=z.len; G.zonePending=false;
+  elZoneName.textContent=z.name; elZoneJp.textContent=z.jp;
+  elZoneCard.style.color=z.color;
+  elZoneTint.style.color=z.color; elZoneTint.style.opacity='0.34';
+  elZoneUi.hidden=false;
+  elZoneCard.style.animation='none'; void elZoneCard.offsetWidth; elZoneCard.style.animation='';
+  flash(z.color,0.3); shake(0.35); SFX.zone();
+}
+function endZone(){
+  var z=ZONES[G.zone];
+  G.zone=-1; G.zonesDone++; G.score+=z.bonus;
+  G.nextZone=290+Math.random()*230;
+  hideZoneUi(); SFX.zoneEnd(); flash('#F7EFE6',0.2);
+  pop('ZONE CLEAR +'+z.bonus,'gold');
+}
+
 function die(){
   if(G.state!=='run') return;
   G.state='dead'; G.deadT=0; G.shown=false; G.camRoll=0;
@@ -799,12 +1004,14 @@ function die(){
   burst(G.px,G.py+0.8,0,0xFF7A59,32,9);
   burst(G.px,G.py+0.8,0,0xF7EFE6,14,6);
   rig.visible=false; blob.visible=false;
+  G.zone=-1; G.zoneSpawnIx=-1; G.zonePending=false;
+  hideZoneUi();
 }
 
 /* ============================= input ============================= */
 function doJump(){
   if(G.state!=='run'||G.air) return;
-  G.air=true; G.vy=JUMP_V; G.slideT=0; SFX.jump();
+  G.air=true; G.vy=JUMP_V*(zoneIs('grav')?0.80:1); G.slideT=0; SFX.jump();
   burst(G.px,0.12,0,0xF7EFE6,5,2.6);
 }
 function doSlide(){
@@ -815,6 +1022,7 @@ function doSlide(){
 }
 function doLane(dir){
   if(G.state!=='run') return;
+  if(zoneIs('mirror')) dir=-dir;
   var n=G.lane+dir; if(n<0||n>2) return;
   G.lane=n; SFX.lane();
 }
@@ -882,12 +1090,83 @@ btnMute.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefa
 var touchDev=('ontouchstart' in W)||(navigator.maxTouchPoints>0);
 if(touchDev) elHint.textContent='左右スワイプ ／ タップでジャンプ ／ 下スワイプでスライド';
 
+var missList=$('#missList'), dailyCount=$('#dailyCount');
+var skinRow=$('#skinRow'), skinNote=$('#skinNote'), skinCount=$('#skinCount');
+var ovDaily=$('#ovDaily'), ovMissList=$('#ovMissList');
+var ovUnlock=$('#ovUnlock'), ovUnlockList=$('#ovUnlockList');
+
+function hex6(n){ return '#'+('000000'+n.toString(16)).slice(-6); }
+function applySkin(id){
+  var sk=skinById(id);
+  M.fur.color.setHex(sk.fur); M.furDark.color.setHex(sk.dark); M.cream.color.setHex(sk.cream);
+}
+function lockedIds(){
+  var out=[];
+  for(var i=0;i<SKINS.length;i++) if(!skinOpen(SKINS[i])) out.push(SKINS[i].id);
+  return out;
+}
+function fillList(ul,items){
+  ul.innerHTML='';
+  for(var i=0;i<items.length;i++){
+    var li=D.createElement('li');
+    li.className='on';
+    li.appendChild(D.createElement('i'));
+    var sp=D.createElement('span'); sp.textContent=items[i];
+    li.appendChild(sp);
+    ul.appendChild(li);
+  }
+}
+function renderDaily(){
+  missList.innerHTML='';
+  var done=0;
+  for(var i=0;i<DAILY.m.length;i++){
+    var e=DAILY.m[i], li=D.createElement('li');
+    if(e.done){ li.className='on'; done++; }
+    li.appendChild(D.createElement('i'));
+    var sp=D.createElement('span'); sp.textContent=missLabel(e);
+    li.appendChild(sp);
+    missList.appendChild(li);
+  }
+  dailyCount.textContent=done+' / 3'+(done===3?'  ALL CLEAR':'');
+}
+function renderSkins(){
+  skinRow.innerHTML='';
+  var open=0;
+  for(var i=0;i<SKINS.length;i++){
+    (function(sk){
+      var ok=skinOpen(sk);
+      if(ok) open++;
+      var b=D.createElement('button');
+      b.type='button'; b.className='skin'+(ok?'':' lock')+((ok&&sk.id===PROF.skin)?' sel':'');
+      b.style.background='linear-gradient(135deg,'+hex6(sk.fur)+' 0 52%,'+hex6(sk.dark)+' 52% 100%)';
+      b.setAttribute('aria-label',sk.name+(ok?'':'（未解放）'));
+      b.title=sk.name;
+      b.addEventListener('click',function(){
+        if(!skinOpen(sk)){
+          skinNote.innerHTML='<b>'+sk.name+'</b> — '+sk.reqText+(sk.prog?'（現在 '+sk.prog()+'）':'');
+          return;
+        }
+        PROF.skin=sk.id; saveProf(); applySkin(sk.id); renderSkins();
+        skinNote.innerHTML='<b>'+sk.name+'</b> を選択中';
+        SFX.lane();
+      });
+      skinRow.appendChild(b);
+    })(SKINS[i]);
+  }
+  skinCount.textContent=open+' / '+SKINS.length;
+  var cur=skinById(PROF.skin);
+  skinNote.innerHTML='<b>'+cur.name+'</b> を選択中';
+}
+
 var TIPS=[
   'ニアミスは最大の稼ぎどころ。避けられる障害物ほど、ギリギリまで引きつける。',
   'コンボは 3 秒で切れる。クリスタルとニアミスを途切れさせず繋ぐ。',
   '青いバーはスライド、赤い壁はジャンプ、紫の柱はレーン移動。色で判断する。',
   '空中で ↓ を押すと急降下。着地を早めて次の障害物に備えられる。',
-  '650m ごとに景色が変わる。夜明けまで辿り着けるか。'
+  '650m ごとに景色が変わる。夜明けまで辿り着けるか。',
+  '特殊ゾーンは抜け切るとボーナス。MIRROR だけは操作が左右逆になるので落ち着いて。',
+  'CRYSTAL RUSH は障害物ゼロ。コンボを一気に最大まで積む稼ぎ場。',
+  'デイリーミッションは毎日0時に入れ替わる。3つ揃えると ALL CLEAR。'
 ];
 $('#tip').textContent='TIP — '+TIPS[(Math.random()*TIPS.length)|0];
 
@@ -901,6 +1180,7 @@ refreshBest();
 function startRun(){
   ac(); BGM.start(); SFX.go();
   resetGame();
+  G.locked=lockedIds();
   G.state='run'; G.bdGap=6;
   elTitle.hidden=true; elOver.hidden=true; elHud.hidden=false;
   elHint.style.opacity='1';
@@ -914,7 +1194,7 @@ $('#btnStart').addEventListener('click',startRun);
 $('#btnRetry').addEventListener('click',startRun);
 $('#btnHome').addEventListener('click',function(){
   elOver.hidden=true; elTitle.hidden=false; elHud.hidden=true;
-  G.state='menu'; refreshBest();
+  G.state='menu'; refreshBest(); renderDaily(); renderSkins();
   $('#tip').textContent='TIP — '+TIPS[(Math.random()*TIPS.length)|0];
 });
 
@@ -999,7 +1279,8 @@ function drawCard(){
   x.fillStyle='rgba(247,239,230,.18)'; x.fillRect(64,556,1072,1);
   ls(x,'0.2em');
   x.fillStyle='#A093B4'; x.font='700 13px "Chivo Mono",monospace';
-  x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  CRYSTALS '+G.crystals,64,600);
+  x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  CRYSTALS '+G.crystals
+    +'  /  ZONES '+G.zonesDone+'  /  '+skinById(PROF.skin).name,64,600);
   x.textAlign='right';
   x.fillText(new Date().toISOString().slice(0,10).replace(/-/g,'.'),1136,600);
   x.textAlign='left'; ls(x,'0em');
@@ -1059,6 +1340,35 @@ function showResult(){
   var best=store.get('best',0)|0, s=Math.round(G.score), isBest=s>best;
   if(isBest) store.set('best',s);
   store.set('runs',(store.get('runs',0)|0)+1);
+
+  PROF.dist+=Math.round(G.dist); PROF.runs++;
+  PROF.crystals+=G.crystals; PROF.near+=G.near; PROF.zones+=G.zonesDone;
+  saveProf();
+
+  var i,newly=[];
+  for(i=0;i<DAILY.m.length;i++){
+    var e=DAILY.m[i]; if(e.done) continue;
+    var def=missById(e.id);
+    if(def.get()>=def.tiers[e.tier]){ e.done=true; newly.push(missLabel(e)); }
+  }
+  if(newly.length){
+    store.set('daily',DAILY);
+    if(dailyCleared()&&!DAILY.claimed){
+      DAILY.claimed=true; PROF.dailies++; saveProf(); store.set('daily',DAILY);
+      newly.push('DAILY ALL CLEAR — 3/3 達成');
+    }
+  }
+  fillList(ovMissList,newly); ovDaily.hidden=!newly.length;
+
+  var unlocked=[];
+  for(i=0;i<SKINS.length;i++){
+    if(G.locked && G.locked.indexOf(SKINS[i].id)>=0 && skinOpen(SKINS[i])){
+      unlocked.push(SKINS[i].name+' — '+SKINS[i].reqText);
+    }
+  }
+  fillList(ovUnlockList,unlocked); ovUnlock.hidden=!unlocked.length;
+  if(unlocked.length) renderSkins();
+  renderDaily();
   $('#ovTitle').textContent=isBest?'NEW BEST':'GAME OVER';
   $('#ovEyebrow').textContent=isBest?'PERSONAL RECORD':('RUN COMPLETE  //  '+BIOMES[biomeIx].name);
   elHud.hidden=true; elOver.hidden=false; refreshBest();
@@ -1086,15 +1396,38 @@ function step(raw){
   if(G.state==='run'){
     G.intro=Math.min(1,G.intro+raw*1.3);
     G.speed=Math.min(SPD_MAX,SPD_MIN+G.dist*0.0135)*(0.45+0.55*G.intro);
+    if(zoneIs('surge')) G.speed*=1.3;
     if(G.speed>G.speedPeak) G.speedPeak=G.speed;
-    adv=G.speed*dt; G.dist+=adv; G.score+=adv;
+    adv=G.speed*dt; G.dist+=adv; G.score+=adv*(zoneIs('surge')?2:1);
     if(G.combo>1){ G.comboT-=dt; if(G.comboT<=0) G.combo=1; }
     var want=Math.floor(G.dist/650)%BIOMES.length;
     if(want!==biomeIx) applyBiome(want,false);
+
+    if(G.zoneSpawnIx>=0){
+      G.zoneSpawnLeft-=adv;
+      if(G.zoneSpawnLeft<=0) G.zoneSpawnIx=-1;
+    }
+    if(G.zonePending && G.dist>=G.zoneStartAt) activateZone();
+    if(G.zone>=0){
+      G.zoneLeft-=adv;
+      elZoneFill.style.transform='scaleX('+Math.max(0,G.zoneLeft/ZONES[G.zone].len)+')';
+      if(G.zoneLeft<=0) endZone();
+    } else if(!G.zonePending && G.zoneSpawnIx<0 && G.dist>200){
+      G.nextZone-=adv;
+      if(G.nextZone<=0) scheduleZone();
+    }
+
     G.gapLeft-=adv;
     if(G.gapLeft<=0){
-      spawnRow(); flushCrystals();
-      G.gapLeft=G.speed*Math.max(0.80,1.18-G.dist*0.00032);
+      if(zoneSpawnIs('rush')){
+        spawnCrystalWave();
+        G.gapLeft=G.speed*0.55;
+      } else {
+        spawnRow(); flushCrystals();
+        var gt=Math.max(0.80,1.18-G.dist*0.00032);
+        if(zoneSpawnIs('gaunt')) gt=Math.max(0.60,gt*0.68);
+        G.gapLeft=G.speed*gt;
+      }
     }
   } else if(G.state==='dead'){
     G.deadT+=raw; G.speed*=Math.pow(0.04,raw); adv=G.speed*dt;
@@ -1112,7 +1445,7 @@ function step(raw){
   /* player */
   var tx=LANE_X[G.lane];
   G.px+=(tx-G.px)*Math.min(1,dt*15);
-  if(G.air){ G.vy+=GRAV*dt; G.py+=G.vy*dt; if(G.py<=0){ G.py=0; G.vy=0; G.air=false; burst(G.px,0.1,0,0xF7EFE6,4,2.2); } }
+  if(G.air){ G.vy+=GRAV*(zoneIs('grav')?0.45:1)*dt; G.py+=G.vy*dt; if(G.py<=0){ G.py=0; G.vy=0; G.air=false; burst(G.px,0.1,0,0xF7EFE6,4,2.2); } }
   if(G.slideT>0) G.slideT-=dt;
   var sliding=(G.slideT>0&&!G.air);
   G.slideAmt+=((sliding?1:0)-G.slideAmt)*Math.min(1,raw*18);
@@ -1192,7 +1525,7 @@ function step(raw){
 
   /* streaks */
   var sn=Math.max(0,Math.min(1,(G.speed-SPD_MIN)/(SPD_MAX-SPD_MIN)));
-  BGM.target=(G.state==='run')?(0.34+sn*0.66):(G.state==='dead'?0.05:0.1);
+  BGM.target=(G.state==='run')?Math.min(1.15,0.34+sn*0.66+(G.zone>=0?0.16:0)):(G.state==='dead'?0.05:0.1);
   for(i=0;i<streaks.length;i++){
     var st=streaks[i];
     st.position.z+=adv*2.4;
@@ -1253,6 +1586,9 @@ function frame(now){
 
 /* ============================= boot ============================= */
 function boot(saved){
+  if(!skinOpen(skinById(PROF.skin))){ PROF.skin='sunset'; saveProf(); }
+  applySkin(PROF.skin);
+  renderDaily(); renderSkins();
   resetGame();
   if(saved && saved.best) store.set('best',Math.max(store.get('best',0)|0,saved.best|0));
   refreshBest();
