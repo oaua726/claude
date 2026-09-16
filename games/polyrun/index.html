@@ -46,8 +46,6 @@ body{
 #grain{position:absolute;inset:0;pointer-events:none;opacity:.5;
   background:radial-gradient(ellipse at 50% 58%,transparent 42%,rgba(11,7,20,.72) 100%)}
 #flash{position:absolute;inset:0;pointer-events:none;opacity:0;background:#fff;mix-blend-mode:screen}
-#comboRim{position:absolute;inset:0;pointer-events:none;opacity:0;color:var(--gold);
-  box-shadow:inset 0 0 90px 10px currentColor, inset 0 0 26px 2px currentColor}
 
 .layer{position:absolute;inset:0;
   padding:calc(env(safe-area-inset-top,0px) + 14px) 16px calc(env(safe-area-inset-bottom,0px) + 14px)}
@@ -248,7 +246,6 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
   <canvas id="gl"></canvas>
   <div id="grain"></div>
   <div id="flash"></div>
-  <div id="comboRim"></div>
   <div id="zoneTint"></div>
 
   <!-- HUD -->
@@ -865,7 +862,7 @@ function ghostPuff(){
   var g=null,i;
   for(i=0;i<ghosts.length;i++) if(ghosts[i].life<=0){ g=ghosts[i]; break; }
   if(!g){ g=ghosts[0]; for(i=1;i<ghosts.length;i++) if(ghosts[i].life<g.life) g=ghosts[i]; }
-  g.life=g.max=0.24;
+  g.life=g.max=0.18;
   g.mat.color.copy(M.fur.color);
   g.obj.position.set(player.position.x,player.position.y+rig.position.y,0);
   g.obj.rotation.set(rig.rotation.x,0,player.rotation.z);
@@ -1051,7 +1048,6 @@ function resetGame(){
   for(var gi=0;gi<ghosts.length;gi++){ ghosts[gi].life=0; ghosts[gi].obj.visible=false; ghosts[gi].mat.opacity=0; }
   for(gi=0;gi<rings.length;gi++){ rings[gi].life=0; rings[gi].m.visible=false; }
   player.scale.set(1,1,1);
-  if(elRim) elRim.style.opacity='0';
   if(edgeMat) edgeMat.opacity=0;
 }
 
@@ -1116,7 +1112,7 @@ function flushCrystals(){
 }
 
 /* ============================= effects ============================= */
-var elFlash=$('#flash'), elPops=$('#pops'), elGo=$('#go'), elRim=$('#comboRim');
+var elFlash=$('#flash'), elPops=$('#pops'), elGo=$('#go');
 var flashT=0, flashPeak=0;
 function flash(color,amt){
   if(REDUCE) amt*=0.35;
@@ -1906,7 +1902,7 @@ function step(raw){
 
   if(G.state==='run'&&G.heat>0.12&&!REDUCE){
     G.ghostT-=raw;
-    if(G.ghostT<=0){ ghostPuff(); G.ghostT=0.055; }
+    if(G.ghostT<=0){ ghostPuff(); G.ghostT=0.06; }
   }
   for(i=0;i<ghosts.length;i++){
     var gh=ghosts[i];
@@ -1914,7 +1910,7 @@ function step(raw){
     gh.life-=raw;
     if(gh.life<=0){ gh.obj.visible=false; gh.mat.opacity=0; continue; }
     gh.obj.position.z+=adv;
-    gh.mat.opacity=(gh.life/gh.max)*0.26*G.heat;
+    gh.mat.opacity=(gh.life/gh.max)*0.13*G.heat;
   }
   for(i=0;i<rings.length;i++){
     var rg=rings[i];
@@ -2000,7 +1996,6 @@ function step(raw){
 
   edgeMat.opacity=Math.min(0.95,G.heat*0.5+G.beat*(0.16+G.heat*0.3)+G.bar*0.1);
   sun.scale.setScalar(1+G.beat*0.02+G.bar*0.02);
-  elRim.style.opacity=Math.max(0,G.heat-0.45)*0.66+G.beat*G.heat*0.18;
 
   /* camera */
   var pull=Math.max(0,1.15-camera.aspect)*8.5;
