@@ -828,7 +828,7 @@ function spawnOb(type,laneX){
   o.mesh.position.set(laneX,s.y,SPAWN_Z);
   o.x=laneX; o.halfW=s.w/2; o.halfD=s.d/2;
   o.bot=s.y-s.h/2; o.top=s.y+s.h/2;
-  o.z=SPAWN_Z; o.minClear=999; o.scored=false; o.kind=type; o.kind=type;
+  o.z=SPAWN_Z; o.minClear=999; o.scored=false; o.kind=type;
   return o;
 }
 
@@ -924,6 +924,7 @@ function resetGame(){
     state:'menu', dist:0, score:0, speed:SPD_MIN, lane:1, px:0, py:0, vy:0,
     air:false, slideT:0, slideAmt:0, jumpBuf:0, slideBuf:0, phase:0, combo:1, comboT:0, maxCombo:1, near:0, crystals:0,
     speedPeak:SPD_MIN, shown:false, bdGap:6,
+    cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9,
     zone:-1, zoneLeft:0, lastZone:-1, nextZone:300, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
@@ -1066,15 +1067,53 @@ function endZone(){
 }
 
 var KILL={
-  low:  {act:'JUMP', c:'#FF4D6D',jp:'赤い壁はジャンプで飛べた'},
-  wlow: {act:'JUMP', c:'#FF4D6D',jp:'全レーンをふさぐ壁もジャンプで飛べた'},
-  high: {act:'SLIDE',c:'#6EE7F9',jp:'青いバーはスライドでくぐれた'},
-  whigh:{act:'SLIDE',c:'#6EE7F9',jp:'全レーンのバーもスライドでくぐれた'},
-  tall: {act:'DODGE',c:'#B45CE0',jp:'紫の柱はレーンを変えてかわす'}
+  low:  {act:'JUMP', c:'#FF4D6D',name:'赤い壁'},
+  wlow: {act:'JUMP', c:'#FF4D6D',name:'全レーンをふさぐ壁'},
+  high: {act:'SLIDE',c:'#6EE7F9',name:'青いバー'},
+  whigh:{act:'SLIDE',c:'#6EE7F9',name:'全レーンのバー'},
+  tall: {act:'DODGE',c:'#B45CE0',name:'紫の柱'}
 };
-function die(kind){
+/* Was there a lane the fox could have been in instead? Full-width bars have none. */
+function laneWasFree(o){
+  if(!o || o.halfW>3) return false;
+  for(var L=0;L<3;L++){
+    var x=LANE_X[L];
+    if(Math.abs(x-o.x)<0.5) continue;
+    var blocked=false;
+    for(var j=0;j<obPool.live.length;j++){
+      var q=obPool.live[j];
+      if(Math.abs(q.z-o.z)>2.5) continue;
+      if(Math.abs(q.x-x)<(q.halfW+P_HALF)){ blocked=true; break; }
+    }
+    if(!blocked) return true;
+  }
+  return false;
+}
+/* Advice has to fit what actually happened. Telling a player who just slid to
+   "slide" reads as the game not watching, so the state at impact decides the line. */
+function killCause(o){
+  var kind=(o&&o.kind)||'tall', k=KILL[kind]||KILL.tall;
+  var air=G.air, tried=(G.t-G.tSlide)<0.3,
+      sliding=((G.slideT>0&&!G.air)||tried), free=laneWasFree(o), alt=free?'、または隣のレーンに逃げる':'';
+  var hint;
+  if(kind==='tall'){
+    hint=air?'紫の柱は跳び越えられない。レーンを変えてかわす'
+            :'紫の柱はレーン移動でかわす';
+  } else if(k.act==='JUMP'){
+    if(air) hint=(G.vy>0?'ジャンプが遅かった — まだ上がりきっていない'
+                        :'ジャンプが早かった — もう落下しはじめている');
+    else if(sliding) hint='スライド中は跳べない。'+k.name+'はジャンプで越す';
+    else hint=k.name+'はジャンプで飛び越す'+alt;
+  } else {
+    if(air) hint='ジャンプ中は姿勢を下げられない。'+k.name+'はスライドでくぐる';
+    else if(sliding) hint='スライドが遅かった — もう少し手前で ↓';
+    else hint=k.name+'はスライドでくぐる'+alt;
+  }
+  return {act:k.act,c:k.c,jp:hint};
+}
+function die(o){
   if(G.state!=='run') return;
-  G.killKind=kind||'tall';
+  G.cause=killCause(o);
   G.state='dead'; G.deadT=0; G.shown=false; G.camRoll=0;
   shake(1.2); flash('#FF4D6D',0.75); SFX.crash(); BGM.duck();
   burst(G.px,G.py+0.8,0,0xFF7A59,32,9);
@@ -1100,11 +1139,13 @@ function slideNow(){
 }
 function doJump(){
   if(G.state!=='run') return;
+  G.tJump=G.t;
   if(G.air){ G.jumpBuf=JUMP_BUF; return; }
   jumpNow();
 }
 function doSlide(){
   if(G.state!=='run') return;
+  G.tSlide=G.t;
   if(G.air){ G.vy=Math.min(G.vy,-16); G.slideBuf=SLIDE_BUF; return; }
   slideNow();
 }
@@ -1497,7 +1538,7 @@ function commitRun(){
 }
 
 function showDeath(){
-  var k=KILL[G.killKind]||KILL.tall, r=G.res;
+  var k=G.cause, r=G.res;
   deathCard.style.color=k.c;
   deathAct.textContent=k.act;
   deathHint.textContent=k.jp;
@@ -1516,11 +1557,11 @@ function showDeath(){
 function renderResult(){
   G.state='over';
   elDeath.hidden=true;
-  var r=G.res, R=rankOf(r.score), k=KILL[G.killKind]||KILL.tall;
+  var r=G.res, R=rankOf(r.score), k=G.cause;
 
   $('#ovTitle').textContent=r.isBest?'NEW BEST':'GAME OVER';
   $('#ovEyebrow').textContent=r.isBest?'PERSONAL RECORD':('RUN COMPLETE  //  '+BIOMES[biomeIx].name);
-  ovCause.innerHTML='最後に当たったのは <b>'+k.act+'</b> の障害物 — '+k.jp;
+  ovCause.innerHTML='<b>'+k.act+'</b> — '+k.jp;
   if(!r.isBest && r.diff>0 && r.diff<=Math.max(400,r.prevBest*0.18)){
     ovNear.hidden=false; ovNear.innerHTML='ベストまで あと <b>'+fmt(r.diff)+'</b> 点';
   } else ovNear.hidden=true;
@@ -1664,7 +1705,7 @@ function step(raw){
     if(Math.abs(o.z)<o.halfD+0.55){
       var clear=lat>vert?lat:vert;
       if(clear<o.minClear) o.minClear=clear;
-      if(lat<0&&vert<0){ die(o.kind); continue; }
+      if(lat<0&&vert<0){ die(o); continue; }
     }
     if(!o.scored&&o.z>o.halfD+0.7){
       o.scored=true;
