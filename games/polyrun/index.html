@@ -728,13 +728,13 @@ scene.add(hemi,amb,sunLight);
 var BIOMES=[
   { name:'SUNSET', sky:['#FF9E6B','#C2456F','#2A1240'], fog:0x9a3f66,
     bld:[0x3A1C4E,0x53215E,0x2B1440], neon:[0xFF7A59,0xFFD166], road:'#170E27',
-    edge:'#FF7A59', amb:0x7a4a7a, dir:0xFFC49B, sun:'#FFD9A0' },
+    edge:'#FF7A59', amb:0x7a4a7a, dir:0xFFC49B, sun:'#FFD9A0', win:0x3a2410 },
   { name:'NEON NIGHT', sky:['#16215C','#3B1E5E','#07040F'], fog:0x241a52,
     bld:[0x161033,0x22164A,0x0F0B26], neon:[0x6EE7F9,0xFF4D9D], road:'#0D0920',
-    edge:'#6EE7F9', amb:0x3a2f6e, dir:0x9FB6FF, sun:'#7FE3F5' },
+    edge:'#6EE7F9', amb:0x3a2f6e, dir:0x9FB6FF, sun:'#7FE3F5', win:0xFFC978 },
   { name:'DAWN', sky:['#9FDCE8','#F2A6C0','#3A2150'], fog:0xb07fa0,
     bld:[0x4E3564,0x6A4276,0x3B2550], neon:[0xFFD166,0xF7EFE6], road:'#231536',
-    edge:'#FFD166', amb:0x8f7aa8, dir:0xFFF0D8, sun:'#FFF3C4' }
+    edge:'#FFD166', amb:0x8f7aa8, dir:0xFFF0D8, sun:'#FFF3C4', win:0x4a3a22 }
 ];
 var biomeIx=0;
 var fogTarget=new THREE.Color(BIOMES[0].fog);
@@ -775,6 +775,42 @@ var grCv=D.createElement('canvas'); grCv.width=256; grCv.height=256;
 })();
 var grTex=new THREE.CanvasTexture(grCv);
 grTex.wrapS=grTex.wrapT=THREE.RepeatWrapping; grTex.repeat.set(116,38);
+
+/* One window sheet, cloned per building so each can set its own repeat and keep
+   the window size roughly constant whatever the tower's proportions are. */
+var winCv=D.createElement('canvas'); winCv.width=64; winCv.height=64;
+(function(){
+  var x=winCv.getContext('2d');
+  x.fillStyle='#000'; x.fillRect(0,0,64,64);
+  for(var r=0;r<4;r++){
+    for(var c=0;c<4;c++){
+      if(Math.random()<0.34) continue;            /* dark windows break up the grid */
+      var v=0.55+Math.random()*0.45;
+      x.fillStyle='rgba(255,255,255,'+v.toFixed(2)+')';
+      x.fillRect(c*16+4,r*16+5,8,7);
+    }
+  }
+})();
+var winTex=new THREE.CanvasTexture(winCv);
+winTex.wrapS=winTex.wrapT=THREE.RepeatWrapping;
+
+/* Abstract neon signage: bars of light, tinted per building. */
+var signCv=D.createElement('canvas'); signCv.width=64; signCv.height=128;
+(function(){
+  var x=signCv.getContext('2d');
+  x.clearRect(0,0,64,128);
+  x.fillStyle='#fff';
+  x.fillRect(4,4,56,3); x.fillRect(4,121,56,3);
+  var y=18;
+  while(y<112){
+    var w=14+Math.random()*34;
+    x.globalAlpha=0.55+Math.random()*0.45;
+    x.fillRect(8+Math.random()*(48-w),y,w,6);
+    y+=12+Math.random()*8;
+  }
+  x.globalAlpha=1;
+})();
+var signTex=new THREE.CanvasTexture(signCv);
 
 var sunCv=D.createElement('canvas'); sunCv.width=256; sunCv.height=256;
 (function(){
@@ -950,23 +986,86 @@ function spawnCrystal(x,y,z){
   c.x=x; c.y=y; c.z=z; return c;
 }
 
-/* --- buildings --- */
+/* --- buildings ---
+   Four silhouettes built from the same five children. Unused parts are hidden
+   rather than rebuilt, so a tower costs the same as a slab in the pool. */
+var UNIT=new THREE.BoxGeometry(1,1,1);
+var M_LAMP=new THREE.MeshBasicMaterial({color:0xFF4D6D,fog:false});  /* shared: one blink drives them all */
 var bdPool=new Pool(function(){
   var g=new THREE.Group();
-  var box=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),mat(0x3A1C4E));
-  var neon=new THREE.Mesh(new THREE.BoxGeometry(1,0.14,1),new THREE.MeshBasicMaterial({color:0xFF7A59}));
-  g.add(box); g.add(neon); scene.add(g);
-  return {mesh:g,box:box,neon:neon};
+  var m=mat(0x3A1C4E);
+  m.emissive=new THREE.Color(0x000000);
+  m.emissiveMap=winTex.clone();
+  m.emissiveMap.wrapS=m.emissiveMap.wrapT=THREE.RepeatWrapping;
+  m.emissiveMap.needsUpdate=true;
+  var box=new THREE.Mesh(UNIT,m);
+  var upper=new THREE.Mesh(UNIT,m);
+  var neon=new THREE.Mesh(UNIT,new THREE.MeshBasicMaterial({color:0xFF7A59}));
+  var spire=new THREE.Mesh(UNIT,new THREE.MeshBasicMaterial({color:0xF7EFE6}));
+  var lamp=new THREE.Mesh(new THREE.OctahedronGeometry(0.3,0),M_LAMP);
+  var sign=new THREE.Mesh(new THREE.PlaneGeometry(1,1),
+    new THREE.MeshBasicMaterial({map:signTex,color:0x6EE7F9,transparent:true,
+      opacity:0.92,side:THREE.DoubleSide,depthWrite:false,fog:true}));
+  g.add(box); g.add(upper); g.add(neon); g.add(spire); g.add(lamp); g.add(sign);
+  scene.add(g);
+  return {mesh:g,box:box,upper:upper,neon:neon,spire:spire,lamp:lamp,sign:sign,mat:m};
 });
+function rnd(a,b){ return a+Math.random()*(b-a); }
 function spawnBuilding(z){
   var b=bdPool.get(), bi=BIOMES[biomeIx];
   var side=Math.random()<0.5?-1:1;
-  var w=2.6+Math.random()*4.2, d=2.6+Math.random()*4.2, h=3+Math.random()*Math.random()*22;
-  b.box.scale.set(w,h,d); b.box.position.y=h/2;
-  b.box.material.color.set(bi.bld[(Math.random()*bi.bld.length)|0]);
-  b.neon.scale.set(w*1.02,1,d*1.02); b.neon.position.y=h+0.08;
+  var r=Math.random();
+  var kind = r<0.50?0 : r<0.68?1 : r<0.82?2 : 3;   /* slab / stepped / spire / signed */
+  var w,d,h;
+
+  if(kind===1){ w=rnd(4,8);   d=rnd(4,8);   h=rnd(6,15); }
+  else if(kind===2){ w=rnd(1.9,3.4); d=rnd(1.9,3.4); h=rnd(12,27); }
+  else if(kind===3){ w=rnd(3,6.5); d=rnd(3,6.5); h=rnd(5,13); }
+  else { w=rnd(2.2,7.5); d=rnd(2.2,7.5); h=rnd(3,10)+Math.random()*Math.random()*18; }
+
+  b.box.scale.set(w,h,d); b.box.position.set(0,h/2,0);
+  b.mat.color.set(bi.bld[(Math.random()*bi.bld.length)|0]);
+  b.mat.emissive.setHex(bi.win);
+  b.mat.emissiveMap.repeat.set(Math.max(1,Math.round(w*0.55)),Math.max(1,Math.round(h*0.34)));
+
+  var topY=h, topW=w, topD=d;
+  if(kind===1){                                   /* setback: a narrower block on top */
+    var uw=w*rnd(0.5,0.72), ud=d*rnd(0.5,0.72), uh=rnd(4,11);
+    b.upper.visible=true;
+    b.upper.scale.set(uw,uh,ud); b.upper.position.set(0,h+uh/2,0);
+    topY=h+uh; topW=uw; topD=ud;
+  } else b.upper.visible=false;
+
+  b.neon.visible=true;
+  b.neon.scale.set(topW*1.03,0.16,topD*1.03);
+  b.neon.position.set(0,topY+0.08,0);
   b.neon.material.color.set(bi.neon[(Math.random()*bi.neon.length)|0]);
-  b.mesh.position.set(side*(8+Math.random()*12),0,z);
+
+  if(kind===2){                                   /* spire with a warning lamp */
+    var sh=rnd(3,7.5);
+    b.spire.visible=true; b.lamp.visible=true;
+    b.spire.scale.set(0.22,sh,0.22); b.spire.position.set(0,topY+sh/2,0);
+    b.spire.material.color.set(bi.neon[(Math.random()*bi.neon.length)|0]);
+    b.lamp.position.set(0,topY+sh+0.3,0);
+  } else { b.spire.visible=false; b.lamp.visible=false; }
+
+  if(kind===3){
+    b.sign.visible=true;
+    if(Math.random()<0.6){                        /* rooftop billboard, turned toward the road */
+      var bw=rnd(2.6,Math.max(3.2,w*1.15)), bh=rnd(1.5,2.8);
+      b.sign.scale.set(bw,bh,1);
+      b.sign.position.set(0,topY+bh/2+0.35,0);
+      b.sign.rotation.set(0,-side*0.38,0);
+    } else {                                      /* sign projecting off the wall, angled to catch the view */
+      var sw=rnd(1.8,3.2), sh2=rnd(3.5,Math.max(4,h*0.75));
+      b.sign.scale.set(sw,sh2,1);
+      b.sign.position.set(-side*(d/2+0.6),rnd(2.6,Math.max(3.2,h-sh2/2)),0);
+      b.sign.rotation.set(0,-side*(Math.PI/2-0.45),0);
+    }
+    b.sign.material.color.set(bi.neon[(Math.random()*bi.neon.length)|0]);
+  } else b.sign.visible=false;
+
+  b.mesh.position.set(side*rnd(7.5,26),0,z);
   b.z=z; return b;
 }
 
@@ -1996,6 +2095,7 @@ function step(raw){
 
   edgeMat.opacity=Math.min(0.95,G.heat*0.5+G.beat*(0.16+G.heat*0.3)+G.bar*0.1);
   sun.scale.setScalar(1+G.beat*0.02+G.bar*0.02);
+  M_LAMP.color.setRGB(0.26+0.74*G.bar,0.05+0.17*G.bar,0.11+0.23*G.bar);
 
   /* camera */
   var pull=Math.max(0,1.15-camera.aspect)*8.5;
