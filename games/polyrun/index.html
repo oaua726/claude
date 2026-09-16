@@ -69,6 +69,11 @@ body{
   text-shadow:0 1px 6px rgba(11,7,20,.9);transition:opacity .6s}
 #ctl{display:flex;align-items:flex-end;gap:10px;pointer-events:none;z-index:5}
 #mute{margin-left:auto}
+#lang{pointer-events:auto;touch-action:manipulation;background:rgba(11,7,20,.62);
+  border:1px solid rgba(247,239,230,.3);color:var(--bone);font:inherit;font-size:11px;
+  letter-spacing:.14em;padding:9px 14px;clip-path:var(--cham-s);cursor:pointer}
+#lang:hover{border-color:var(--gold);color:var(--gold)}
+#lang:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 #mute{pointer-events:auto;touch-action:manipulation;background:rgba(11,7,20,.62);
   border:1px solid rgba(110,231,249,.5);color:var(--volt);font:inherit;font-size:11px;
   letter-spacing:.14em;padding:9px 14px;clip-path:var(--cham-s);cursor:pointer;
@@ -287,14 +292,14 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
       </div>
     </div>
     <div class="row" style="align-items:flex-end">
-      <div id="hint">← → レーン移動 &nbsp;/&nbsp; SPACE ジャンプ &nbsp;/&nbsp; ↓ スライド</div>
+      <div id="hint"></div>
     </div>
   </div>
 
   <div class="layer" id="zoneUi" hidden>
     <div class="zone-card" id="zoneCard">
       <div class="zone-n disp" id="zoneName">LOW GRAVITY</div>
-      <div class="zone-j" id="zoneJp">低重力</div>
+      <div class="zone-j" id="zoneJp"></div>
       <div class="zone-bar"><i id="zoneFill"></i></div>
     </div>
   </div>
@@ -313,7 +318,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
       <div class="death-hint" id="deathHint"></div>
       <div class="death-near" id="deathNear" hidden></div>
       <div class="death-won" id="deathWon" hidden></div>
-      <div class="death-go" id="deathGo">SPACE / タップで即リトライ</div>
+      <div class="death-go" id="deathGo"></div>
     </div>
   </div>
 
@@ -324,35 +329,31 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
     <div class="panel home">
       <p class="eyebrow">LOW-POLY ENDLESS RUN</p>
       <h1 class="disp">POLYRUN</h1>
-      <p class="tagline">
-        夕暮れ・ネオン・夜明け。<strong>650m ごとに景色が変わる</strong>ローポリ都市を、
-        1匹のキツネが全力で駆け抜ける。障害物を<strong>ギリギリで</strong>かわすほどコンボが伸び、
-        道中では<strong>特殊ゾーン</strong>がルールを書き換える。ぶつかったら即終了。
-      </p>
+      <p class="tagline" data-i18n-html="tagline"></p>
       <div class="home-cols">
         <div>
           <dl class="keys">
-            <dt>KEYBOARD</dt><dd>← → 移動 / SPACE・↑ ジャンプ / ↓ スライド</dd>
-            <dt>TOUCH</dt><dd>左右スワイプで移動 / タップ・上スワイプでジャンプ / 下スワイプでスライド</dd>
-            <dt>NEAR MISS</dt><dd>障害物をすれすれで通過するとスローモーション＋ボーナス</dd>
-            <dt>ZONE</dt><dd>低重力・密集地帯・加速など4種。抜け切るとボーナス</dd>
+            <dt data-i18n="k.kbd">KEYBOARD</dt><dd data-i18n="k.kbdD"></dd>
+            <dt data-i18n="k.touch">TOUCH</dt><dd data-i18n="k.touchD"></dd>
+            <dt data-i18n="k.near">NEAR MISS</dt><dd data-i18n="k.nearD"></dd>
+            <dt data-i18n="k.zone">ZONE</dt><dd data-i18n="k.zoneD"></dd>
           </dl>
           <div class="sect">
-            <h2 class="sh">FOX<em id="skinCount"></em></h2>
+            <h2 class="sh"><span data-i18n="ui.fox">FOX</span><em id="skinCount"></em></h2>
             <div class="skins" id="skinRow"></div>
             <p class="skin-note" id="skinNote"></p>
           </div>
         </div>
         <div>
           <div class="sect" style="margin-top:18px">
-            <h2 class="sh">TODAY'S MISSIONS<em id="dailyCount"></em></h2>
+            <h2 class="sh"><span data-i18n="ui.missions">TODAY'S MISSIONS</span><em id="dailyCount"></em></h2>
             <ul class="miss" id="missList"></ul>
           </div>
-          <div class="best"><span>BEST</span><b class="mono" id="uBest">0</b><span id="uRuns"></span></div>
+          <div class="best"><span data-i18n="ui.best">BEST</span><b class="mono" id="uBest">0</b><span id="uRuns"></span></div>
           <p id="tip"></p>
         </div>
       </div>
-      <button class="btn disp" id="btnStart" type="button">START</button>
+      <button class="btn disp" id="btnStart" type="button" data-i18n="ui.start">START</button>
     </div>
   </div>
 
@@ -374,56 +375,54 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
       </div>
       <div class="ovstats" id="ovStats"></div>
       <div class="sect" id="ovDaily" hidden>
-        <h2 class="sh">MISSION CLEAR</h2>
+        <h2 class="sh" data-i18n="r.missionClear">MISSION CLEAR</h2>
         <ul class="miss" id="ovMissList"></ul>
       </div>
       <div class="sect" id="ovUnlock" hidden>
-        <h2 class="sh">NEW FOX UNLOCKED</h2>
+        <h2 class="sh" data-i18n="r.unlock">NEW FOX UNLOCKED</h2>
         <ul class="miss" id="ovUnlockList"></ul>
       </div>
-      <button class="btn disp" id="btnRetry" type="button">RETRY</button>
+      <button class="btn disp" id="btnRetry" type="button" data-i18n="ui.retry">RETRY</button>
       <div id="cardWrap">
-        <img id="cardImg" class="pending" alt="リザルトカード">
-        <p class="saveHint">画像を長押し（PC は右クリック）で保存できます。</p>
+        <img id="cardImg" class="pending" data-i18n-alt="ui.cardAlt" alt="Result card">
+        <p class="saveHint" data-i18n="ui.saveHint"></p>
       </div>
       <div class="btns2">
-        <button class="btn ghost" id="btnShare" type="button" hidden>シェア</button>
-        <button class="btn ghost" id="btnCopy" type="button">結果をコピー</button>
+        <button class="btn ghost" id="btnShare" type="button" data-i18n="ui.share" hidden></button>
+        <button class="btn ghost" id="btnCopy" type="button" data-i18n="ui.copy"></button>
       </div>
-      <button class="btn ghost" id="btnHome" type="button">タイトルへ</button>
+      <button class="btn ghost" id="btnHome" type="button" data-i18n="ui.home"></button>
     </div>
   </div>
 
   <div class="layer screen" id="pauseUi" hidden>
     <div class="panel">
-      <p class="eyebrow">PAUSED</p>
-      <h1 class="jp-title" style="font-size:clamp(32px,8vw,48px)">一時停止</h1>
+      <p class="eyebrow" data-i18n="p.eyebrow">PAUSED</p>
+      <h1 class="disp" id="pTitle" style="font-size:clamp(32px,8vw,48px)" data-i18n="p.title">PAUSED</h1>
       <div class="pstats">
-        <div><div class="k">SCORE</div><div class="v mono" id="pScore">0</div></div>
-        <div><div class="k">DISTANCE</div><div class="v mono" id="pDist">0</div></div>
+        <div><div class="k" data-i18n="p.score">SCORE</div><div class="v mono" id="pScore">0</div></div>
+        <div><div class="k" data-i18n="p.dist">DISTANCE</div><div class="v mono" id="pDist">0</div></div>
       </div>
-      <button class="btn disp" id="btnResume" type="button">RESUME</button>
-      <button class="btn ghost" id="btnPRetry" type="button">最初からやり直す</button>
-      <button class="btn ghost" id="btnPHome" type="button">タイトルへ</button>
+      <button class="btn disp" id="btnResume" type="button" data-i18n="ui.resume">RESUME</button>
+      <button class="btn ghost" id="btnPRetry" type="button" data-i18n="ui.restart"></button>
+      <button class="btn ghost" id="btnPHome" type="button" data-i18n="ui.home"></button>
     </div>
   </div>
 
   <div class="layer screen" id="fail">
     <div class="panel">
-      <p class="eyebrow">WEBGL UNAVAILABLE</p>
-      <p class="tagline">
-        このブラウザで 3D 描画（WebGL）を開始できませんでした。<br>
-        ハードウェアアクセラレーションを有効にするか、別のブラウザで開いてください。
-      </p>
+      <p class="eyebrow" data-i18n="fail.t">WEBGL UNAVAILABLE</p>
+      <p class="tagline" data-i18n-html="fail.b"></p>
     </div>
   </div>
 
   <div class="layer" id="ctl">
     <button id="btnPause" type="button" hidden>&#10073;&#10073; PAUSE</button>
     <button id="mute" type="button" aria-pressed="false"><i></i><span id="muteLabel">SOUND ON</span></button>
+    <button id="lang" type="button"><span id="langLabel" data-i18n="ui.lang">English</span></button>
   </div>
 
-  <div id="toast">コピーしました</div>
+  <div id="toast"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -442,6 +441,179 @@ var store={
   set:function(k,v){try{localStorage.setItem('polyrun.'+k,JSON.stringify(v));}catch(e){}}
 };
 
+/* ============================= language ============================= */
+/* The runner itself needs no words, but every label did - which capped the
+   audience at Japanese readers. Strings live here and are swapped live. */
+var I18N={
+ja:{
+ 'tagline':'夕暮れ・ネオン・夜明け。<strong>400m ごとに景色が変わる</strong>ローポリ都市を、1匹のキツネが全力で駆け抜ける。障害物を<strong>ギリギリで</strong>かわすほどコンボが伸び、道中では<strong>特殊ゾーン</strong>がルールを書き換える。ぶつかったら即終了。',
+ 'k.kbd':'KEYBOARD','k.kbdD':'← → 移動 / SPACE・↑ ジャンプ / ↓ スライド',
+ 'k.touch':'TOUCH','k.touchD':'左右スワイプで移動 / タップ・上スワイプでジャンプ / 下スワイプでスライド',
+ 'k.near':'NEAR MISS','k.nearD':'障害物をすれすれで通過するとスローモーション＋ボーナス',
+ 'k.zone':'ZONE','k.zoneD':'低重力・密集地帯・加速など4種。抜け切るとボーナス',
+ 'ui.fox':'FOX','ui.missions':"TODAY'S MISSIONS",'ui.best':'BEST','ui.runs':'{0} RUNS',
+ 'ui.start':'START','ui.retry':'RETRY','ui.resume':'RESUME','ui.home':'タイトルへ',
+ 'ui.restart':'最初からやり直す','ui.share':'シェア','ui.copy':'結果をコピー',
+ 'ui.copied':'結果をコピーしました','ui.copyFail':'コピーできませんでした',
+ 'ui.saveHint':'画像を長押し（PC は右クリック）で保存できます。','ui.cardAlt':'リザルトカード',
+ 'ui.tip':'TIP — {0}','ui.lang':'English',
+ 'hint.kbd':'← → レーン移動 &nbsp;/&nbsp; SPACE ジャンプ &nbsp;/&nbsp; ↓ スライド',
+ 'hint.touch':'左右スワイプ ／ タップでジャンプ ／ 下スワイプでスライド',
+ 'hud.bestFar':'BEST {0}m','hud.bestNear':'BEST まで {0}m','hud.record':'RECORD +{0}m',
+ 'hud.near':'NEAR MISS','hud.perfect':'PERFECT',
+ 'zone.grav':'低重力 — ジャンプが伸びる','zone.rush':'障害物なし — 拾い切れ',
+ 'zone.gaunt':'密集地帯 — 間隔が詰まる','zone.surge':'加速 — スコア2倍',
+ 'kill.low':'赤い壁','kill.wlow':'全レーンをふさぐ壁','kill.high':'青いバー',
+ 'kill.whigh':'全レーンのバー','kill.tall':'紫の柱',
+ 'c.alt':'、または隣のレーンに逃げる',
+ 'c.tallAir':'紫の柱は跳び越えられない。レーンを変えてかわす','c.tall':'紫の柱はレーン移動でかわす',
+ 'c.jumpLate':'ジャンプが遅かった — まだ上がりきっていない',
+ 'c.jumpEarly':'ジャンプが早かった — もう落下しはじめている',
+ 'c.jumpSliding':'スライド中は跳べない。{0}はジャンプで越す',
+ 'c.jumpLanded':'ジャンプが早かった — もう着地してしまっている',
+ 'c.jump':'{0}はジャンプで飛び越す{1}',
+ 'c.slideAir':'ジャンプ中は姿勢を下げられない。{0}はスライドでくぐる',
+ 'c.slideLate':'スライドが遅かった — もう少し手前で ↓',
+ 'c.slideEarly':'スライドが早かった — もう姿勢が戻っている',
+ 'c.slide':'{0}はスライドでくぐる{1}',
+ 'd.retryKbd':'SPACE で即リトライ','d.retryTouch':'タップで即リトライ',
+ 'd.newBest':'NEW BEST&nbsp; <b>{0}</b>','d.toBest':'ベストまで あと <b>{0}</b>',
+ 'rec.title':'NEW RECORD','rec.sub':'ここから先は未踏',
+ 'nm.title':'NEAR MISS','nm.sub':'ギリギリで避けるほど高得点',
+ 'r.gameOver':'GAME OVER','r.newBest':'NEW BEST',
+ 'r.personal':'PERSONAL RECORD','r.complete':'RUN COMPLETE  //  {0}',
+ 'r.cause':'<b>{0}</b> — {1}','r.toBest':'ベストまで あと <b>{0}</b> 点',
+ 'r.missionClear':'MISSION CLEAR','r.unlock':'NEW FOX UNLOCKED',
+ 'rank.S':'伝説のキツネ','rank.A':'夜明けの走者','rank.B':'ネオンの常連',
+ 'rank.C':'夕暮れの新人','rank.D':'次は 1000 点へ',
+ 'p.eyebrow':'PAUSED','p.title':'一時停止','p.score':'SCORE','p.dist':'DISTANCE',
+ 'sk.req.sunset':'最初から使える','sk.req.frost':'累計距離 3,000m',
+ 'sk.req.neon':'ニアミス累計 100回','sk.req.ember':'特殊ゾーン 25回クリア',
+ 'sk.req.gold':'ベストスコア 8,000',
+ 'sk.prog.dist':'{0} / 3,000m','sk.prog.near':'{0} / 100回',
+ 'sk.prog.zone':'{0} / 25回','sk.prog.best':'{0} / 8,000',
+ 'sk.locked':'（未解放）','sk.selected':'<b>{0}</b> を選択中',
+ 'sk.note':'<b>{0}</b> — {1}（現在 {2}）',
+ 'm.prefix':'1ランで{0}','m.near':'ニアミス {0} 回','m.dist':'{0}m 走る',
+ 'm.cry':'クリスタル {0} 個','m.combo':'コンボ x{0} に到達','m.score':'{0} 点',
+ 'm.zone':'特殊ゾーンを {0} 回クリア','m.allClear':'DAILY ALL CLEAR — 3/3 達成',
+ 'share':'POLYRUN で {0} 点（ランク {1}）\n距離 {2}m ／ 最大コンボ x{3} ／ ニアミス {4}回\n#POLYRUN',
+ 'fail.t':'WEBGL UNAVAILABLE',
+ 'fail.b':'このブラウザで 3D 描画（WebGL）を開始できませんでした。<br>ハードウェアアクセラレーションを有効にするか、別のブラウザで開いてください。',
+ 'tips':['ニアミスは最大の稼ぎどころ。避けられる障害物ほど、ギリギリまで引きつける。',
+  'コンボは 3 秒で切れる。クリスタルとニアミスを途切れさせず繋ぐ。',
+  '青いバーはスライド、赤い壁はジャンプ、紫の柱はレーン移動。色で判断する。',
+  '空中で ↓ を押すと急降下。着地を早めて次の障害物に備えられる。',
+  '400m ごとに景色が変わる。夜明けまで辿り着けるか。',
+  '特殊ゾーンは抜け切るとボーナス。GAUNTLET は間隔が詰まるぶん配点が一番高い。',
+  'CRYSTAL RUSH は障害物ゼロ。コンボを一気に最大まで積む稼ぎ場。',
+  'デイリーミッションは毎日0時に入れ替わる。3つ揃えると ALL CLEAR。']
+},
+en:{
+ 'tagline':'Sunset, neon, daybreak. A fox tears through a low-poly city that <strong>changes every 400m</strong>. The <strong>closer you shave past</strong> an obstacle the higher your combo climbs, and <strong>event zones</strong> rewrite the rules mid-run. One hit ends it.',
+ 'k.kbd':'KEYBOARD','k.kbdD':'← → move / SPACE or ↑ jump / ↓ slide',
+ 'k.touch':'TOUCH','k.touchD':'Swipe left/right to move, tap or swipe up to jump, swipe down to slide',
+ 'k.near':'NEAR MISS','k.nearD':'Shave past an obstacle for slow motion and bonus points',
+ 'k.zone':'ZONE','k.zoneD':'Four of them: low gravity, gauntlet, speed surge and more. Clear one for a bonus',
+ 'ui.fox':'FOX','ui.missions':"TODAY'S MISSIONS",'ui.best':'BEST','ui.runs':'{0} RUNS',
+ 'ui.start':'START','ui.retry':'RETRY','ui.resume':'RESUME','ui.home':'TITLE',
+ 'ui.restart':'START OVER','ui.share':'Share','ui.copy':'Copy result',
+ 'ui.copied':'Result copied','ui.copyFail':'Could not copy',
+ 'ui.saveHint':'Long-press (or right-click) the image to save it.','ui.cardAlt':'Result card',
+ 'ui.tip':'TIP — {0}','ui.lang':'日本語',
+ 'hint.kbd':'← → lane &nbsp;/&nbsp; SPACE jump &nbsp;/&nbsp; ↓ slide',
+ 'hint.touch':'Swipe to change lane / tap to jump / swipe down to slide',
+ 'hud.bestFar':'BEST {0}m','hud.bestNear':'BEST IN {0}m','hud.record':'RECORD +{0}m',
+ 'hud.near':'NEAR MISS','hud.perfect':'PERFECT',
+ 'zone.grav':'Low gravity — jumps carry further','zone.rush':'No obstacles — grab everything',
+ 'zone.gaunt':'Gauntlet — obstacles close in','zone.surge':'Speed surge — double score',
+ 'kill.low':'the red wall','kill.wlow':'the wall across every lane','kill.high':'the blue bar',
+ 'kill.whigh':'the bar across every lane','kill.tall':'the purple pillar',
+ 'c.alt':', or take the open lane',
+ 'c.tallAir':'You cannot clear the purple pillar. Change lane instead.','c.tall':'Change lane to pass the purple pillar',
+ 'c.jumpLate':'Jumped too late — still on the way up',
+ 'c.jumpEarly':'Jumped too early — already coming down',
+ 'c.jumpSliding':'You cannot jump mid-slide. Jump over {0}.',
+ 'c.jumpLanded':'Jumped too early — already back on the ground',
+ 'c.jump':'Jump over {0}{1}',
+ 'c.slideAir':'You cannot duck in mid-air. Slide under {0}.',
+ 'c.slideLate':'Slid too late — press ↓ a little sooner',
+ 'c.slideEarly':'Slid too early — already back up',
+ 'c.slide':'Slide under {0}{1}',
+ 'd.retryKbd':'SPACE to retry now','d.retryTouch':'Tap to retry now',
+ 'd.newBest':'NEW BEST&nbsp; <b>{0}</b>','d.toBest':'<b>{0}</b> short of your best',
+ 'rec.title':'NEW RECORD','rec.sub':'Everything past here is new ground',
+ 'nm.title':'NEAR MISS','nm.sub':'The closer you shave, the more it pays',
+ 'r.gameOver':'GAME OVER','r.newBest':'NEW BEST',
+ 'r.personal':'PERSONAL RECORD','r.complete':'RUN COMPLETE  //  {0}',
+ 'r.cause':'<b>{0}</b> — {1}','r.toBest':'<b>{0}</b> points short of your best',
+ 'r.missionClear':'MISSION CLEAR','r.unlock':'NEW FOX UNLOCKED',
+ 'rank.S':'Legend of the city','rank.A':'Daybreak runner','rank.B':'Neon regular',
+ 'rank.C':'Sunset rookie','rank.D':'Aim for 1,000',
+ 'p.eyebrow':'RUN ON HOLD','p.title':'PAUSED','p.score':'SCORE','p.dist':'DISTANCE',
+ 'sk.req.sunset':'Available from the start','sk.req.frost':'3,000m total distance',
+ 'sk.req.neon':'100 near misses in total','sk.req.ember':'Clear 25 event zones',
+ 'sk.req.gold':'Best score of 8,000',
+ 'sk.prog.dist':'{0} / 3,000m','sk.prog.near':'{0} / 100',
+ 'sk.prog.zone':'{0} / 25','sk.prog.best':'{0} / 8,000',
+ 'sk.locked':' (locked)','sk.selected':'<b>{0}</b> selected',
+ 'sk.note':'<b>{0}</b> — {1} (now {2})',
+ 'm.prefix':'In one run: {0}','m.near':'{0} near misses','m.dist':'run {0}m',
+ 'm.cry':'{0} crystals','m.combo':'reach combo x{0}','m.score':'score {0}',
+ 'm.zone':'clear {0} event zones','m.allClear':'DAILY ALL CLEAR — 3/3',
+ 'share':'POLYRUN — {0} points (rank {1})\n{2}m / max combo x{3} / {4} near misses\n#POLYRUN',
+ 'fail.t':'WEBGL UNAVAILABLE',
+ 'fail.b':'This browser could not start 3D rendering (WebGL).<br>Enable hardware acceleration, or try another browser.',
+ 'tips':['Near misses pay the most. Let avoidable obstacles come as close as you dare.',
+  'A combo dies after 3 seconds. Keep crystals and near misses flowing.',
+  'Blue bar = slide, red wall = jump, purple pillar = change lane. Read the colour.',
+  'Press ↓ in mid-air to drop fast and land in time for the next one.',
+  'The city changes every 400m. Can you reach daybreak?',
+  'Clear an event zone for a bonus. GAUNTLET pays the most because it packs them in.',
+  'CRYSTAL RUSH has no obstacles at all. Bank your combo to the cap there.',
+  'Daily missions roll over at midnight. Clear all three for ALL CLEAR.']
+}};
+var lang=(function(){
+  var saved=store.get('lang',null);
+  if(saved&&I18N[saved]) return saved;
+  return ((navigator.language||navigator.userLanguage||'en')+'').toLowerCase().indexOf('ja')===0?'ja':'en';
+})();
+function t(k){
+  var s=(I18N[lang]&&I18N[lang][k]);
+  if(s===undefined) s=I18N.en[k];
+  if(s===undefined) return k;
+  for(var i=1;i<arguments.length;i++) s=s.split('{'+(i-1)+'}').join(arguments[i]);
+  return s;
+}
+function applyLang(){
+  var i,n=D.querySelectorAll('[data-i18n]');
+  for(i=0;i<n.length;i++) n[i].textContent=t(n[i].getAttribute('data-i18n'));
+  n=D.querySelectorAll('[data-i18n-html]');
+  for(i=0;i<n.length;i++) n[i].innerHTML=t(n[i].getAttribute('data-i18n-html'));
+  n=D.querySelectorAll('[data-i18n-alt]');
+  for(i=0;i<n.length;i++) n[i].setAttribute('alt',t(n[i].getAttribute('data-i18n-alt')));
+  D.documentElement.setAttribute('lang',lang);
+  /* the in-run hint depends on the input device, and the pause headline needs a
+     Japanese-capable face only when it is actually set in Japanese */
+  var h=D.getElementById('hint');
+  if(h) h.innerHTML=t((typeof touchDev!=='undefined'&&touchDev)?'hint.touch':'hint.kbd');
+  var pt=D.getElementById('pTitle');
+  if(pt) pt.className=(lang==='ja')?'jp-title':'disp';
+}
+/* Strings baked into rendered lists have to be rebuilt, not just re-read. */
+function relocalize(){
+  applyLang();
+  if(typeof renderDaily==='function') renderDaily();
+  if(typeof renderSkins==='function') renderSkins();
+  if(typeof refreshTip==='function') refreshTip();
+}
+applyLang();
+D.getElementById('lang').addEventListener('click',function(e){
+  e.stopPropagation(); e.preventDefault();
+  lang=(lang==='ja')?'en':'ja'; store.set('lang',lang);
+  relocalize();
+});
+
 /* ============================= profile, skins, dailies ============================= */
 var PROF=(function(){
   var d=store.get('prof',null)||{};
@@ -452,19 +624,19 @@ function saveProf(){ store.set('prof',PROF); }
 
 var SKINS=[
   {id:'sunset',name:'SUNSET',fur:0xFF8A4C,dark:0xD1592E,cream:0xF7EFE6,
-   req:null,reqText:'最初から使える'},
+   req:null,reqText:function(){return t('sk.req.sunset');}},
   {id:'frost', name:'FROST', fur:0xDCEBF7,dark:0x7FA9CE,cream:0xFFFFFF,
-   req:function(){return PROF.dist>=3000;},reqText:'累計距離 3,000m',
-   prog:function(){return PROF.dist+' / 3,000m';}},
+   req:function(){return PROF.dist>=3000;},reqText:function(){return t('sk.req.frost');},
+   prog:function(){return t('sk.prog.dist',PROF.dist);}},
   {id:'neon',  name:'NEON',  fur:0xFF4D9D,dark:0x8E2BC4,cream:0x6EE7F9,
-   req:function(){return PROF.near>=100;},reqText:'ニアミス累計 100回',
-   prog:function(){return PROF.near+' / 100回';}},
+   req:function(){return PROF.near>=100;},reqText:function(){return t('sk.req.neon');},
+   prog:function(){return t('sk.prog.near',PROF.near);}},
   {id:'ember', name:'EMBER', fur:0x2E1C24,dark:0xFF5A1F,cream:0xFFB067,
-   req:function(){return PROF.zones>=25;},reqText:'特殊ゾーン 25回クリア',
-   prog:function(){return PROF.zones+' / 25回';}},
+   req:function(){return PROF.zones>=25;},reqText:function(){return t('sk.req.ember');},
+   prog:function(){return t('sk.prog.zone',PROF.zones);}},
   {id:'gold',  name:'GOLD',  fur:0xFFD166,dark:0xC08A1E,cream:0xFFF3D0,
-   req:function(){return (store.get('best',0)|0)>=8000;},reqText:'ベストスコア 8,000',
-   prog:function(){return (store.get('best',0)|0)+' / 8,000';}}
+   req:function(){return (store.get('best',0)|0)>=8000;},reqText:function(){return t('sk.req.gold');},
+   prog:function(){return t('sk.prog.best',(store.get('best',0)|0));}}
 ];
 function skinById(id){
   for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i];
@@ -475,18 +647,18 @@ function skinOpen(sk){ return !sk.req || sk.req(); }
 /* Missions are scoped to a single run so the goal is always readable mid-race.
    The day's three are drawn from the date, so every device sees the same set. */
 var MISSIONS=[
-  {id:'near', tiers:[8,12,16],           text:function(n){return 'ニアミス '+n+' 回';},        get:function(){return G.near;}},
-  {id:'dist', tiers:[600,900,1300],      text:function(n){return n+'m 走る';},                 get:function(){return G.dist;}},
-  {id:'cry',  tiers:[22,32,45],          text:function(n){return 'クリスタル '+n+' 個';},      get:function(){return G.crystals;}},
-  {id:'combo',tiers:[6,8,10],            text:function(n){return 'コンボ x'+n+' に到達';},     get:function(){return G.maxCombo;}},
-  {id:'score',tiers:[3000,5000,8000],    text:function(n){return fmt(n)+' 点';},               get:function(){return G.score;}},
-  {id:'zone', tiers:[2,3,4],             text:function(n){return '特殊ゾーンを '+n+' 回クリア';},get:function(){return G.zonesDone;}}
+  {id:'near', tiers:[8,12,16],           text:function(n){return t('m.near',n);},   get:function(){return G.near;}},
+  {id:'dist', tiers:[600,900,1300],      text:function(n){return t('m.dist',n);},   get:function(){return G.dist;}},
+  {id:'cry',  tiers:[22,32,45],          text:function(n){return t('m.cry',n);},    get:function(){return G.crystals;}},
+  {id:'combo',tiers:[6,8,10],            text:function(n){return t('m.combo',n);},  get:function(){return G.maxCombo;}},
+  {id:'score',tiers:[3000,5000,8000],    text:function(n){return t('m.score',fmt(n));},get:function(){return G.score;}},
+  {id:'zone', tiers:[2,3,4],             text:function(n){return t('m.zone',n);},   get:function(){return G.zonesDone;}}
 ];
 function missById(id){
   for(var i=0;i<MISSIONS.length;i++) if(MISSIONS[i].id===id) return MISSIONS[i];
   return MISSIONS[0];
 }
-function missLabel(e){ var d=missById(e.id); return '1ランで'+d.text(d.tiers[e.tier]); }
+function missLabel(e){ var d=missById(e.id); return t('m.prefix',d.text(d.tiers[e.tier])); }
 function todayKey(){
   var d=new Date();
   return d.getFullYear()*10000+(d.getMonth()+1)*100+d.getDate();
@@ -1142,10 +1314,10 @@ var SPD_MIN=18, SPD_MAX=46, COMBO_T=3.0, COMBO_MAX=10;
 /* Event zones rewrite one rule for a fixed stretch of road, so no two runs
    read the same. Each one is announced, colour-coded and scored on exit. */
 var ZONES=[
-  {id:'grav',  name:'LOW GRAVITY', jp:'低重力 — ジャンプが伸びる',   color:'#6EE7F9',len:270,bonus:300},
-  {id:'rush',  name:'CRYSTAL RUSH',jp:'障害物なし — 拾い切れ',       color:'#FFD166',len:230,bonus:250},
-  {id:'gaunt', name:'GAUNTLET',    jp:'密集地帯 — 間隔が詰まる',     color:'#FF4D6D',len:250,bonus:450},
-  {id:'surge', name:'SPEED SURGE', jp:'加速 — スコア2倍',            color:'#FF7A59',len:260,bonus:350}
+  {id:'grav',  name:'LOW GRAVITY', color:'#6EE7F9',len:270,bonus:300},
+  {id:'rush',  name:'CRYSTAL RUSH',color:'#FFD166',len:230,bonus:250},
+  {id:'gaunt', name:'GAUNTLET',    color:'#FF4D6D',len:250,bonus:450},
+  {id:'surge', name:'SPEED SURGE', color:'#FF7A59',len:260,bonus:350}
 ];
 var PIPE=155;   /* metres a freshly spawned row travels before it reaches the fox */
 /* Most runs used to end before 650m, so the second biome and the first event
@@ -1313,7 +1485,7 @@ function nearMiss(clear){
   pop(t.name+' +'+pts,t.cls,t.big);
   if(!G.taughtNear && !store.get('taughtNear',false)){
     G.taughtNear=true; store.set('taughtNear',true);
-    showRec('NEAR MISS','ギリギリで避けるほど高得点',2400,'#6EE7F9');
+    showRec(t('nm.title'),t('nm.sub'),2400,'#6EE7F9');
   }
 }
 /* ---- personal best, used as a target during the run ---- */
@@ -1333,11 +1505,12 @@ function hitRecord(){
   burst(G.px,1.2,0,0xFFD166,26,7);
   burst(G.px,1.2,0,0xF7EFE6,12,5);
   SFX.record();
-  showRec('NEW RECORD','ここから先は未踏',1900);
+  showRec(t('rec.title'),t('rec.sub'),1900);
 }
 
 /* ---- pause ----
    Also fires when the tab goes away, so switching windows never costs a run. */
+var btnLang=$('#lang');
 var elPause=$('#pauseUi'), btnPause=$('#btnPause'), pScore=$('#pScore'), pDist=$('#pDist');
 var COUNT_STEP=0.5, COUNT_N=3;
 function pauseGame(){
@@ -1345,7 +1518,7 @@ function pauseGame(){
   G.state='pause'; G.count=0;
   pScore.textContent=fmt(G.score);
   pDist.textContent=Math.round(G.dist)+'m';
-  btnPause.hidden=true;
+  btnPause.hidden=true; btnLang.hidden=false;
   elGo.hidden=true;
   elPause.hidden=false;
   BGM.hold();
@@ -1367,10 +1540,10 @@ function beginResume(){
 function finishResume(){
   G.count=0; G.state='run';
   elGo.hidden=true;
-  btnPause.hidden=false;
+  btnPause.hidden=false; btnLang.hidden=true;
 }
 function leavePause(){
-  G.count=0; elPause.hidden=true; elGo.hidden=true; btnPause.hidden=true;
+  G.count=0; elPause.hidden=true; elGo.hidden=true; btnPause.hidden=true; btnLang.hidden=false;
   hideRec();
 }
 btnPause.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); pauseGame(); });
@@ -1403,7 +1576,7 @@ function scheduleZone(){
 function activateZone(){
   var ix=G.zoneSpawnIx>=0?G.zoneSpawnIx:G.lastZone, z=ZONES[ix];
   G.zone=ix; G.zoneLeft=z.len; G.zonePending=false;
-  elZoneName.textContent=z.name; elZoneJp.textContent=z.jp;
+  elZoneName.textContent=z.name; elZoneJp.textContent=t('zone.'+z.id);
   elZoneCard.style.color=z.color;
   elZoneTint.style.color=z.color; elZoneTint.style.opacity='0.34';
   elZoneUi.hidden=false;
@@ -1419,11 +1592,11 @@ function endZone(){
 }
 
 var KILL={
-  low:  {act:'JUMP', c:'#FF4D6D',name:'赤い壁'},
-  wlow: {act:'JUMP', c:'#FF4D6D',name:'全レーンをふさぐ壁'},
-  high: {act:'SLIDE',c:'#6EE7F9',name:'青いバー'},
-  whigh:{act:'SLIDE',c:'#6EE7F9',name:'全レーンのバー'},
-  tall: {act:'DODGE',c:'#B45CE0',name:'紫の柱'}
+  low:  {act:'JUMP', c:'#FF4D6D'},
+  wlow: {act:'JUMP', c:'#FF4D6D'},
+  high: {act:'SLIDE',c:'#6EE7F9'},
+  whigh:{act:'SLIDE',c:'#6EE7F9'},
+  tall: {act:'DODGE',c:'#B45CE0'}
 };
 /* Was there a lane the fox could have been in instead? Full-width bars have none. */
 function laneWasFree(o){
@@ -1445,26 +1618,25 @@ function laneWasFree(o){
    "slide" reads as the game not watching, so the state at impact decides the line. */
 function killCause(o){
   var kind=(o&&o.kind)||'tall', k=KILL[kind]||KILL.tall;
-  var air=G.air, free=laneWasFree(o), alt=free?'、または隣のレーンに逃げる':'';
+  var nm=t('kill.'+kind);
+  var air=G.air, free=laneWasFree(o), alt=free?t('c.alt'):'';
   var sinceSlide=G.t-G.tSlide, sinceJump=G.t-G.tJump;
   var sliding=(G.slideT>0&&!air);
   var hint;
   if(kind==='tall'){
-    hint=air?'紫の柱は跳び越えられない。レーンを変えてかわす'
-            :'紫の柱はレーン移動でかわす';
+    hint=t(air?'c.tallAir':'c.tall');
   } else if(k.act==='JUMP'){
-    if(air) hint=(G.vy>0?'ジャンプが遅かった — まだ上がりきっていない'
-                        :'ジャンプが早かった — もう落下しはじめている');
-    else if(sliding) hint='スライド中は跳べない。'+k.name+'はジャンプで越す';
-    else if(sinceJump<1.2) hint='ジャンプが早かった — もう着地してしまっている';
-    else hint=k.name+'はジャンプで飛び越す'+alt;
+    if(air) hint=t(G.vy>0?'c.jumpLate':'c.jumpEarly');
+    else if(sliding) hint=t('c.jumpSliding',nm);
+    else if(sinceJump<1.2) hint=t('c.jumpLanded');
+    else hint=t('c.jump',nm,alt);
   } else {
-    if(air) hint='ジャンプ中は姿勢を下げられない。'+k.name+'はスライドでくぐる';
-    else if(sliding||sinceSlide<0.3) hint='スライドが遅かった — もう少し手前で ↓';
-    else if(sinceSlide<1.2) hint='スライドが早かった — もう姿勢が戻っている';
-    else hint=k.name+'はスライドでくぐる'+alt;
+    if(air) hint=t('c.slideAir',nm);
+    else if(sliding||sinceSlide<0.3) hint=t('c.slideLate');
+    else if(sinceSlide<1.2) hint=t('c.slideEarly');
+    else hint=t('c.slide',nm,alt);
   }
-  return {act:k.act,c:k.c,jp:hint};
+  return {act:k.act,c:k.c,hint:hint};
 }
 function die(o){
   if(G.state!=='run') return;
@@ -1473,7 +1645,7 @@ function die(o){
   shake(1.2); flash('#FF4D6D',0.75); SFX.crash(); BGM.duck();
   burst(G.px,G.py+0.8,0,0xFF7A59,32,9);
   burst(G.px,G.py+0.8,0,0xF7EFE6,14,6);
-  rig.visible=false; blob.visible=false; btnPause.hidden=true;
+  rig.visible=false; blob.visible=false; btnPause.hidden=true; btnLang.hidden=false;
   hideRec(); uNear.hidden=true;
   G.zone=-1; G.zoneSpawnIx=-1; G.zonePending=false;
   hideZoneUi();
@@ -1599,7 +1771,7 @@ paintMute();
 btnMute.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); toggleMute(); });
 
 var touchDev=('ontouchstart' in W)||(navigator.maxTouchPoints>0);
-if(touchDev) elHint.textContent='左右スワイプ ／ タップでジャンプ ／ 下スワイプでスライド';
+if(touchDev) elHint.innerHTML=t('hint.touch');
 
 var missList=$('#missList'), dailyCount=$('#dailyCount');
 var skinRow=$('#skinRow'), skinNote=$('#skinNote'), skinCount=$('#skinCount');
@@ -1655,15 +1827,16 @@ function renderSkins(){
       var b=D.createElement('button');
       b.type='button'; b.className='skin'+(ok?'':' lock')+((ok&&sk.id===PROF.skin)?' sel':'');
       b.style.background='linear-gradient(135deg,'+hex6(sk.fur)+' 0 52%,'+hex6(sk.dark)+' 52% 100%)';
-      b.setAttribute('aria-label',sk.name+(ok?'':'（未解放）'));
+      b.setAttribute('aria-label',sk.name+(ok?'':t('sk.locked')));
       b.title=sk.name;
       b.addEventListener('click',function(){
         if(!skinOpen(sk)){
-          skinNote.innerHTML='<b>'+sk.name+'</b> — '+sk.reqText+(sk.prog?'（現在 '+sk.prog()+'）':'');
+          skinNote.innerHTML=sk.prog?t('sk.note',sk.name,sk.reqText(),sk.prog())
+                                    :('<b>'+sk.name+'</b> — '+sk.reqText());
           return;
         }
         PROF.skin=sk.id; saveProf(); applySkin(sk.id); renderSkins();
-        skinNote.innerHTML='<b>'+sk.name+'</b> を選択中';
+        skinNote.innerHTML=t('sk.selected',sk.name);
         SFX.lane();
       });
       skinRow.appendChild(b);
@@ -1671,20 +1844,13 @@ function renderSkins(){
   }
   skinCount.textContent=open+' / '+SKINS.length;
   var cur=skinById(PROF.skin);
-  skinNote.innerHTML='<b>'+cur.name+'</b> を選択中';
+  skinNote.innerHTML=t('sk.selected',cur.name);
 }
 
-var TIPS=[
-  'ニアミスは最大の稼ぎどころ。避けられる障害物ほど、ギリギリまで引きつける。',
-  'コンボは 3 秒で切れる。クリスタルとニアミスを途切れさせず繋ぐ。',
-  '青いバーはスライド、赤い壁はジャンプ、紫の柱はレーン移動。色で判断する。',
-  '空中で ↓ を押すと急降下。着地を早めて次の障害物に備えられる。',
-  '650m ごとに景色が変わる。夜明けまで辿り着けるか。',
-  '特殊ゾーンは抜け切るとボーナス。GAUNTLET は間隔が詰まるぶん配点が一番高い。',
-  'CRYSTAL RUSH は障害物ゼロ。コンボを一気に最大まで積む稼ぎ場。',
-  'デイリーミッションは毎日0時に入れ替わる。3つ揃えると ALL CLEAR。'
-];
-$('#tip').textContent='TIP — '+TIPS[(Math.random()*TIPS.length)|0];
+var tipIx=0;
+function refreshTip(){ $('#tip').textContent=t('ui.tip',t('tips')[tipIx]); }
+function rollTip(){ tipIx=(Math.random()*t('tips').length)|0; refreshTip(); }
+rollTip();
 
 function refreshBest(){
   uBest.textContent=(store.get('best',0)|0).toLocaleString('en-US');
@@ -1704,7 +1870,7 @@ function startRun(){
   elTitle.hidden=true; elOver.hidden=true; elHud.hidden=false;
   elHint.style.opacity='1';
   setTimeout(function(){ elHint.style.opacity='0'; },6500);
-  btnPause.hidden=false;
+  btnPause.hidden=false; btnLang.hidden=true;
   elGo.hidden=false;
   var sp=elGo.firstElementChild;
   sp.textContent='GO!';
@@ -1717,7 +1883,7 @@ $('#btnHome').addEventListener('click',function(){
   cancelCard(); elDeath.hidden=true; leavePause();
   elOver.hidden=true; elTitle.hidden=false; elHud.hidden=true;
   G.state='menu'; refreshBest(); renderDaily(); renderSkins();
-  $('#tip').textContent='TIP — '+TIPS[(Math.random()*TIPS.length)|0];
+  rollTip();
 });
 
 var toast=$('#toast'), toastT=0;
@@ -1726,11 +1892,11 @@ function say(msg){ toast.textContent=msg; toast.classList.add('on'); toastT=1.8;
 /* ============================= result card ============================= */
 function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
 function rankOf(s){
-  if(s>=9000) return {letter:'S',cap:'伝説のキツネ',color:'#FFD166'};
-  if(s>=5000) return {letter:'A',cap:'夜明けの走者',color:'#FF7A59'};
-  if(s>=2500) return {letter:'B',cap:'ネオンの常連',color:'#6EE7F9'};
-  if(s>=1000) return {letter:'C',cap:'夕暮れの新人',color:'#F7EFE6'};
-  return {letter:'D',cap:'次は 1000 点へ',color:'#A093B4'};
+  if(s>=9000) return {letter:'S',cap:t('rank.S'),color:'#FFD166'};
+  if(s>=5000) return {letter:'A',cap:t('rank.A'),color:'#FF7A59'};
+  if(s>=2500) return {letter:'B',cap:t('rank.B'),color:'#6EE7F9'};
+  if(s>=1000) return {letter:'C',cap:t('rank.C'),color:'#F7EFE6'};
+  return {letter:'D',cap:t('rank.D'),color:'#A093B4'};
 }
 function rng(seed){ var s=seed>>>0||1; return function(){ s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0; return s/4294967296; }; }
 function chamfer(x,c,X,Y,W2,H2,k){
@@ -1845,20 +2011,19 @@ function ensureCard(cb){
   whenFonts(function(){ paintCard(); cb(); });
 }
 function shareText(){
-  return 'POLYRUN で '+fmt(G.score)+' 点（ランク '+rankOf(G.score).letter+'）\n'
-    +'距離 '+Math.round(G.dist)+'m ／ 最大コンボ x'+G.maxCombo+' ／ ニアミス '+G.near+'回\n#POLYRUN';
+  return t('share',fmt(G.score),rankOf(G.score).letter,Math.round(G.dist),G.maxCombo,G.near);
 }
 function copyText(){
-  var t=shareText();
+  var txt=shareText();
   if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(t).then(function(){ say('結果をコピーしました'); },fallbackCopy);
+    navigator.clipboard.writeText(txt).then(function(){ say(t('ui.copied')); },fallbackCopy);
   } else fallbackCopy();
   function fallbackCopy(){
-    var ta=D.createElement('textarea'); ta.value=t;
+    var ta=D.createElement('textarea'); ta.value=txt;
     ta.style.cssText='position:fixed;opacity:0'; D.body.appendChild(ta); ta.select();
     var ok=false; try{ ok=D.execCommand('copy'); }catch(e){}
     D.body.removeChild(ta);
-    say(ok?'結果をコピーしました':'コピーできませんでした');
+    say(t(ok?'ui.copied':'ui.copyFail'));
   }
 }
 $('#btnCopy').addEventListener('click',copyText);
@@ -1905,13 +2070,13 @@ function commitRun(){
     store.set('daily',DAILY);
     if(dailyCleared()&&!DAILY.claimed){
       DAILY.claimed=true; PROF.dailies++; saveProf(); store.set('daily',DAILY);
-      newly.push('DAILY ALL CLEAR — 3/3 達成');
+      newly.push(t('m.allClear'));
     }
   }
   var unlocked=[];
   for(i=0;i<SKINS.length;i++){
     if(G.locked && G.locked.indexOf(SKINS[i].id)>=0 && skinOpen(SKINS[i])){
-      unlocked.push(SKINS[i].name+' — '+SKINS[i].reqText);
+      unlocked.push(SKINS[i].name+' — '+SKINS[i].reqText());
     }
   }
   if(unlocked.length) renderSkins();
@@ -1924,16 +2089,16 @@ function showDeath(){
   var k=G.cause, r=G.res;
   deathCard.style.color=k.c;
   deathAct.textContent=k.act;
-  deathHint.textContent=k.jp;
+  deathHint.textContent=k.hint;
   if(r.isBest){
-    deathNear.hidden=false; deathNear.innerHTML='NEW BEST&nbsp; <b>'+fmt(r.score)+'</b>';
+    deathNear.hidden=false; deathNear.innerHTML=t('d.newBest',fmt(r.score));
   } else if(r.diff>0 && r.diff<=Math.max(400,r.prevBest*0.18)){
-    deathNear.hidden=false; deathNear.innerHTML='ベストまで あと <b>'+fmt(r.diff)+'</b>';
+    deathNear.hidden=false; deathNear.innerHTML=t('d.toBest',fmt(r.diff));
   } else deathNear.hidden=true;
   var won=r.newly.concat(r.unlocked);
-  if(won.length){ deathWon.hidden=false; deathWon.textContent='✦ '+won.join('　✦ '); }
+  if(won.length){ deathWon.hidden=false; deathWon.textContent='✦ '+won.join('  ✦ '); }
   else deathWon.hidden=true;
-  deathGo.textContent=touchDev?'タップで即リトライ':'SPACE で即リトライ';
+  deathGo.textContent=t(touchDev?'d.retryTouch':'d.retryKbd');
   elDeath.hidden=false;
 }
 
@@ -1942,11 +2107,11 @@ function renderResult(){
   elDeath.hidden=true;
   var r=G.res, R=rankOf(r.score), k=G.cause;
 
-  $('#ovTitle').textContent=r.isBest?'NEW BEST':'GAME OVER';
-  $('#ovEyebrow').textContent=r.isBest?'PERSONAL RECORD':('RUN COMPLETE  //  '+BIOMES[biomeIx].name);
-  ovCause.innerHTML='<b>'+k.act+'</b> — '+k.jp;
+  $('#ovTitle').textContent=t(r.isBest?'r.newBest':'r.gameOver');
+  $('#ovEyebrow').textContent=r.isBest?t('r.personal'):t('r.complete',BIOMES[biomeIx].name);
+  ovCause.innerHTML=t('r.cause',k.act,k.hint);
   if(!r.isBest && r.diff>0 && r.diff<=Math.max(400,r.prevBest*0.18)){
-    ovNear.hidden=false; ovNear.innerHTML='ベストまで あと <b>'+fmt(r.diff)+'</b> 点';
+    ovNear.hidden=false; ovNear.innerHTML=t('r.toBest',fmt(r.diff));
   } else ovNear.hidden=true;
 
   ovScore.textContent=fmt(r.score);
@@ -2249,11 +2414,11 @@ function step(raw){
     if(G.bestDist>0){
       uRec.hidden=false;
       if(G.recHit){
-        uRec.textContent='RECORD +'+Math.round(G.dist-G.bestDist)+'m';
+        uRec.textContent=t('hud.record',Math.round(G.dist-G.bestDist));
         uRec.className='recline mono done';
       } else {
         var left=Math.max(0,Math.round(G.bestDist-G.dist));
-        uRec.textContent=(left<=150?('BEST まで '+left+'m'):('BEST '+fmt(G.bestDist)+'m'));
+        uRec.textContent=(left<=150?t('hud.bestNear',left):t('hud.bestFar',fmt(G.bestDist)));
         uRec.className='recline mono'+(left<=150?' near':'');
       }
     } else uRec.hidden=true;
