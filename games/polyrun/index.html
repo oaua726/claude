@@ -134,6 +134,9 @@ body{
   text-shadow:0 0 26px currentColor}
 .rec-s{margin-top:7px;font-size:11px;line-height:1.7;letter-spacing:.1em;
   color:rgba(247,239,230,.85);text-wrap:balance}
+.odchip{font-style:normal;font-size:9px;letter-spacing:.16em;color:var(--ink);
+  background:var(--gold);padding:2px 6px;margin-left:8px;clip-path:var(--cham-s);
+  vertical-align:1px}
 .recline{font-size:10px;letter-spacing:.14em;color:var(--dim);margin-top:5px}
 .nmline{font-size:10px;letter-spacing:.14em;color:var(--volt);margin-top:6px;opacity:.75}
 .nmline b{font-size:14px;letter-spacing:0}
@@ -276,7 +279,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
     <div>
       <div class="row">
         <div class="tile">
-          <div class="k">SCORE</div>
+          <div class="k">SCORE<i class="odchip mono" id="uTier" hidden></i></div>
           <div class="v mono" id="uScore">0</div>
           <div class="nmline mono" id="uNear" hidden>NEAR MISS <b>0</b></div>
         </div>
@@ -472,6 +475,8 @@ ja:{
  'd.retryKbd':'SPACE で即リトライ','d.retryTouch':'タップで即リトライ',
  'd.newBest':'NEW BEST&nbsp; <b>{0}</b>','d.toBest':'ベストまで あと <b>{0}</b>',
  'rec.title':'NEW RECORD','rec.sub':'ここから先は未踏',
+ 'od.title':'OVERDRIVE ×{0}','od.sub':'速度上限が上がり、距離スコア +{0}%',
+ 'od.chip':'OD ×{0}',
  'nm.title':'NEAR MISS','nm.sub':'ギリギリで避けるほど高得点',
  'r.gameOver':'GAME OVER','r.newBest':'NEW BEST',
  'r.personal':'PERSONAL RECORD','r.complete':'RUN COMPLETE  //  {0}',
@@ -498,6 +503,7 @@ ja:{
   '青いバーはスライド、赤い壁はジャンプ、紫の柱はレーン移動。色で判断する。',
   '空中で ↓ を押すと急降下。着地を早めて次の障害物に備えられる。',
   '400m ごとに景色が変わる。夜明けまで辿り着けるか。',
+  '2,000m から OVERDRIVE。900m ごとに速度上限と距離スコアが上がり、逃げ道のない列が増える。',
   '特殊ゾーンは抜け切るとボーナス。GAUNTLET は間隔が詰まるぶん配点が一番高い。',
   'CRYSTAL RUSH は障害物ゼロ。コンボを一気に最大まで積む稼ぎ場。',
   'デイリーミッションは毎日0時に入れ替わる。3つ揃えると ALL CLEAR。']
@@ -536,6 +542,8 @@ en:{
  'd.retryKbd':'SPACE to retry now','d.retryTouch':'Tap to retry now',
  'd.newBest':'NEW BEST&nbsp; <b>{0}</b>','d.toBest':'<b>{0}</b> short of your best',
  'rec.title':'NEW RECORD','rec.sub':'Everything past here is new ground',
+ 'od.title':'OVERDRIVE ×{0}','od.sub':'Higher top speed, +{0}% distance score',
+ 'od.chip':'OD ×{0}',
  'nm.title':'NEAR MISS','nm.sub':'The closer you shave, the more it pays',
  'r.gameOver':'GAME OVER','r.newBest':'NEW BEST',
  'r.personal':'PERSONAL RECORD','r.complete':'RUN COMPLETE  //  {0}',
@@ -562,6 +570,7 @@ en:{
   'Blue bar = slide, red wall = jump, purple pillar = change lane. Read the colour.',
   'Press ↓ in mid-air to drop fast and land in time for the next one.',
   'The city changes every 400m. Can you reach daybreak?',
+  'OVERDRIVE starts at 2,000m. Every 900m after that the top speed and the distance score rise, and fewer rows leave you an open lane.',
   'Clear an event zone for a bonus. GAUNTLET pays the most because it packs them in.',
   'CRYSTAL RUSH has no obstacles at all. Bank your combo to the cap there.',
   'Daily missions roll over at midnight. Clear all three for ALL CLEAR.']
@@ -1340,6 +1349,18 @@ var ZONES=[
   {id:'gaunt', name:'GAUNTLET',    color:'#FF4D6D',len:250,bonus:450},
   {id:'surge', name:'SPEED SURGE', color:'#FF7A59',len:260,bonus:350}
 ];
+/* Everything used to stop growing early: the obstacle mix at 420m, the spacing at
+   1187m and the speed at 2074m. Past 2074m a run was byte-identical forever, so
+   reaching 5km asked no more of the player than reaching 2km did.
+   Spacing is the one dial that cannot move much further - a jump is airborne for
+   2*JUMP_V/|GRAV| = 0.75s and rows are already 0.80s apart, so tightening it makes
+   jump-after-jump physically impossible rather than hard. OVERDRIVE raises the two
+   dials that do have room: top speed (which shortens how long a row is readable
+   before you must commit) and composition (how often a row leaves no open lane). */
+var TIER_AT=2000, TIER_EVERY=900, TIER_SPD=1.4, TIER_SPD_MAX=14, TIER_SCORE=0.25;
+function tierAt(d){ return d<TIER_AT?0:(1+Math.floor((d-TIER_AT)/TIER_EVERY)); }
+function tierSpeedBonus(){ return Math.min(TIER_SPD_MAX,G.tier*TIER_SPD); }
+
 var PIPE=155;   /* metres a freshly spawned row travels before it reaches the fox */
 /* Most runs used to end before 650m, so the second biome and the first event
    zone were content almost nobody reached. Both now start inside the first
@@ -1364,6 +1385,7 @@ function resetGame(){
     heat:0, beat:0, bar:0, sq:0, camDip:0, ghostT:0, prevCombo:1,
     bestDist:0, recHit:false, recWarn:false, perfect:0, taughtNear:false,
     flip:0, flipTarget:0, lean:0, flips:0,
+    tier:0,
     zone:-1, zoneLeft:0, lastZone:-1, nextZone:40, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
@@ -1386,7 +1408,11 @@ function pickTwoLanes(){
   var a=(Math.random()*3)|0, b=(a+1+((Math.random()*2)|0))%3;
   return [a,b];
 }
+/* Airborne for 2*JUMP_V/|GRAV| = 0.75s, so 0.95s between the wall and the
+   overhang leaves 0.2s to read the second one and duck. */
+var JS_GAP=0.95;
 function spawnRow(){
+  var lead=0;   /* extra metres this row occupies behind its own plane */
   var d=G.dist, floaty=zoneSpawnIs('grav'), dense=zoneSpawnIs('gaunt');
   var kinds=['single','single','single'];
   if(floaty) kinds=['single','single','wlow'];          /* no overhangs while airborne is long */
@@ -1395,6 +1421,16 @@ function spawnRow(){
     if(d>110) kinds.push('wlow');
     if(d>220) kinds.push('double','whigh');
     if(d>420) kinds.push('double','single');
+    /* Each tier makes an open lane rarer, so more rows force the exact action
+       instead of letting the player sidestep. Capped so the mix stays varied. */
+    var ct=Math.min(4,G.tier);
+    /* SPEED SURGE multiplies the speed by 1.3 after the row is placed, which would
+       compress the jump-then-slide window it was built around. Keep it out. */
+    var js=!zoneSpawnIs('surge');
+    for(var ti=0;ti<ct;ti++){
+      kinds.push('double','wlow','whigh');
+      if(ti>=1&&js) kinds.push('jumpslide');
+    }
   }
   /* no overhangs when the fox is airborne for a long time or rows are packed:
      a jump already clears low bars, so low+tall stays fair at any density */
@@ -1415,6 +1451,17 @@ function spawnRow(){
   } else if(kind==='wlow'){
     spawnOb('wlow',0);
     freeLane=(Math.random()*3)|0; crystalY=2.05;
+  } else if(kind==='jumpslide'){
+    /* A full-width wall and then a full-width overhang, far enough apart that the
+       landing always comes first: jump, then slide. No lane escapes either one,
+       and the spacing is derived rather than tuned, so it can never be unfair. */
+    spawnOb('wlow',0);
+    var dz=G.speed*JS_GAP;
+    var o2=spawnOb('whigh',0);
+    o2.z-=dz; o2.mesh.position.z=o2.z;
+    lead=dz;
+    /* the trailing crystals land while the fox is still sliding, so keep them low */
+    freeLane=(Math.random()*3)|0; crystalY=0.5;
   } else {
     spawnOb('whigh',0);
     freeLane=(Math.random()*3)|0; crystalY=0.5;
@@ -1422,8 +1469,9 @@ function spawnRow(){
 
   if(!dense && Math.random()<0.72){
     var n=3+((Math.random()*3)|0);
-    G.crystalQueue={lane:freeLane,y:crystalY,n:n,z:SPAWN_Z-2.5,step:3.1};
+    G.crystalQueue={lane:freeLane,y:crystalY,n:n,z:SPAWN_Z-2.5-lead,step:3.1};
   }
+  return lead;
 }
 /* Rows spawn 155m out, so a cold start leaves the player running through an empty
    city for eleven seconds - on every single retry. Pre-fill the corridor instead. */
@@ -1519,6 +1567,15 @@ function showRec(title,sub,ms,color){
   recCard.style.animation='none'; void recCard.offsetWidth; recCard.style.animation='';
   if(recTimer) clearTimeout(recTimer);
   recTimer=setTimeout(function(){ recTimer=0; elRec.hidden=true; },ms||1700);
+}
+/* Crossing into a tier has to be felt, and it has to say what it bought you -
+   otherwise it reads as the game quietly turning against the player. */
+function tierUp(){
+  var pct=Math.round(G.tier*TIER_SCORE*100);
+  showRec(t('od.title',G.tier),t('od.sub',pct),2100,'#FFD166');
+  flash('#FFD166',0.3); shake(0.45); SFX.record();
+  burst(G.px,1.2,0,0xFFD166,20,6);
+  uTier.hidden=false; uTier.textContent=t('od.chip',G.tier);
 }
 function hitRecord(){
   G.recHit=true;
@@ -1772,6 +1829,7 @@ app.addEventListener('touchend',function(e){
 /* ============================= UI ============================= */
 var uScore=$('#uScore'), uDist=$('#uDist'), uSpd=$('#uSpd'), uBest=$('#uBest'), uRuns=$('#uRuns');
 var elHud=$('#hud'), elTitle=$('#title'), elOver=$('#over'), elCombo=$('#combo');
+var uTier=$('#uTier');
 var comboN=$('#comboN'), comboFill=$('#comboFill'), elHint=$('#hint'), btnMute=$('#mute');
 var uRec=$('#uRec'), elRec=$('#recUi'), recCard=$('#recCard'), recN=$('#recN'), recS=$('#recS');
 var uNear=$('#uNear');
@@ -1885,6 +1943,7 @@ function startRun(){
   cancelCard(); elDeath.hidden=true; leavePause(); hideRec();
   resetGame();
   G.locked=lockedIds();
+  uTier.hidden=true;
   G.bestDist=store.get('bestDist',0)|0;
   seedWorld();
   G.state='run'; G.bdGap=6;
@@ -1989,7 +2048,7 @@ function drawCard(){
   ls(x,'0.2em');
   x.fillStyle='#A093B4'; x.font='700 13px "Chivo Mono",monospace';
   x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  PERFECT '+G.perfect+'  /  FLIPS '+G.flips+'  /  CRYSTALS '+G.crystals
-    +'  /  ZONES '+G.zonesDone+'  /  '+skinById(PROF.skin).name,64,600);
+    +'  /  ZONES '+G.zonesDone+(G.tier>0?('  /  OVERDRIVE x'+G.tier):'')+'  /  '+skinById(PROF.skin).name,64,600);
   x.textAlign='right';
   x.fillText(new Date().toISOString().slice(0,10).replace(/-/g,'.'),1136,600);
   x.textAlign='left'; ls(x,'0em');
@@ -2141,6 +2200,9 @@ function renderResult(){
 
   var rows=[['DISTANCE',Math.round(G.dist)+' m'],['MAX COMBO','x'+G.maxCombo],
             ['NEAR MISS',G.near+(G.perfect?(' ('+G.perfect+'P)'):'')],['ZONES',G.zonesDone+'']];
+  /* how deep the run got is the thing worth bragging about, so it goes on the
+     result panel and the share card rather than only in the HUD */
+  if(G.tier>0) rows.push(['OVERDRIVE','x'+G.tier]);
   ovStats.innerHTML='';
   for(var i=0;i<rows.length;i++){
     var d=D.createElement('div'); d.className='ovs';
@@ -2203,10 +2265,13 @@ function step(raw){
 
   if(G.state==='run'){
     G.intro=Math.min(1,G.intro+raw*1.8);
-    G.speed=Math.min(SPD_MAX,SPD_MIN+G.dist*0.0135)*(0.6+0.4*G.intro);
+    G.speed=(Math.min(SPD_MAX,SPD_MIN+G.dist*0.0135)+tierSpeedBonus())*(0.6+0.4*G.intro);
     if(zoneIs('surge')) G.speed*=1.3;
     if(G.speed>G.speedPeak) G.speedPeak=G.speed;
-    adv=G.speed*dt; G.dist+=adv; G.score+=adv*(zoneIs('surge')?2:1);
+    adv=G.speed*dt; G.dist+=adv;
+    G.score+=adv*(zoneIs('surge')?2:1)*(1+G.tier*TIER_SCORE);
+    var tn=tierAt(G.dist);
+    if(tn>G.tier){ G.tier=tn; tierUp(); }
     if(G.combo>1){ G.comboT-=dt; if(G.comboT<=0) G.combo=1; }
     var want=biomeAt(G.dist);
     if(want!==biomeIx) applyBiome(want,false);
@@ -2236,10 +2301,10 @@ function step(raw){
         spawnCrystalWave();
         G.gapLeft=G.speed*0.55;
       } else {
-        spawnRow(); flushCrystals();
+        var lead=spawnRow(); flushCrystals();
         var gt=Math.max(0.80,1.18-G.dist*0.00032);
         if(zoneSpawnIs('gaunt')) gt=Math.max(0.60,gt*0.68);
-        G.gapLeft=G.speed*gt;
+        G.gapLeft=G.speed*gt+lead;
       }
     }
   } else if(G.state==='dead'){
