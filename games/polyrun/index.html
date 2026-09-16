@@ -120,6 +120,18 @@ body{
   text-shadow:0 2px 10px rgba(11,7,20,.95);animation:blink 1.1s steps(2,start) infinite}
 @keyframes blink{50%{opacity:.35}}
 
+#recUi{pointer-events:none;display:flex;justify-content:center;align-items:flex-start}
+.rec-card{margin-top:150px;text-align:center;color:var(--gold);
+  background:rgba(11,7,20,.72);border:1px solid currentColor;padding:12px 26px 14px;
+  clip-path:var(--cham-s);animation:zoneIn .32s ease-out}
+.rec-n{font-size:clamp(22px,6vw,34px);line-height:1;letter-spacing:.04em;
+  text-shadow:0 0 26px currentColor}
+.rec-s{margin-top:7px;font-size:11px;letter-spacing:.14em;color:rgba(247,239,230,.85)}
+.recline{font-size:10px;letter-spacing:.14em;color:var(--dim);margin-top:5px}
+.recline.near{color:var(--gold);animation:pendPulse .55s ease-in-out infinite}
+.recline.done{color:var(--gold)}
+@keyframes pendPulse{50%{transform:scale(1.08);filter:brightness(1.3)}}
+
 #pops{position:absolute;inset:0;pointer-events:none}
 .pop{position:absolute;left:50%;top:44%;white-space:nowrap;font-size:20px;
   letter-spacing:.04em;text-shadow:0 2px 10px rgba(11,7,20,.9);animation:popUp .95s ease-out forwards}
@@ -259,6 +271,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
         <div class="tile r">
           <div class="k">DISTANCE / SPEED</div>
           <div class="v mono"><span id="uDist">0</span><small>m</small> &middot; <span id="uSpd">0</span><small>km/h</small></div>
+          <div class="recline mono" id="uRec" hidden></div>
         </div>
       </div>
       <div id="combo">
@@ -277,6 +290,13 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
       <div class="zone-n disp" id="zoneName">LOW GRAVITY</div>
       <div class="zone-j" id="zoneJp">低重力</div>
       <div class="zone-bar"><i id="zoneFill"></i></div>
+    </div>
+  </div>
+
+  <div class="layer" id="recUi" hidden>
+    <div class="rec-card" id="recCard">
+      <div class="rec-n disp" id="recN">NEW RECORD</div>
+      <div class="rec-s" id="recS"></div>
     </div>
   </div>
 
@@ -546,7 +566,13 @@ var SFX={
   crash:function(){tone(210,36,0.55,'sawtooth',0.2); noise(0.5,0.26,600);},
   go:function(){tone(420,640,0.1,'square',0.08); setTimeout(function(){tone(640,980,0.17,'square',0.08);},110);},
   zone:function(){tone(180,1500,0.55,'sawtooth',0.1); noise(0.45,0.1,3400);},
-  zoneEnd:function(){tone(880,1760,0.2,'square',0.09); setTimeout(function(){tone(1320,1980,0.16,'square',0.07);},90);}
+  zoneEnd:function(){tone(880,1760,0.2,'square',0.09); setTimeout(function(){tone(1320,1980,0.16,'square',0.07);},90);},
+  recWarn:function(){tone(880,1180,0.1,'square',0.06); setTimeout(function(){tone(1180,1480,0.1,'square',0.05);},110);},
+  record:function(){
+    var n=[523.25,659.25,783.99,1046.5,1318.5,1567.98];
+    for(var i=0;i<6;i++){ (function(f,d){ setTimeout(function(){ tone(f,f*1.5,0.2,'square',0.095); },d); })(n[i],i*72); }
+    noise(0.3,0.08,3200);
+  }
 };
 
 /* ---- bgm: a synthwave loop synthesised note by note, no audio files ----
@@ -1105,7 +1131,7 @@ var LANE_X=[-2.45,0,2.45];
 var SPAWN_Z=-155, KILL_Z=16;
 var GRAV=-34, JUMP_V=12.7, SLIDE_T=0.62;
 var P_HALF=0.42, P_H=1.5, P_SLIDE_H=0.72;
-var SPD_MIN=17, SPD_MAX=46, COMBO_T=3.0, COMBO_MAX=10;
+var SPD_MIN=18, SPD_MAX=46, COMBO_T=3.0, COMBO_MAX=10;
 
 /* Event zones rewrite one rule for a fixed stretch of road, so no two runs
    read the same. Each one is announced, colour-coded and scored on exit. */
@@ -1133,6 +1159,7 @@ function resetGame(){
     speedPeak:SPD_MIN, shown:false, bdGap:6,
     cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9, count:0,
     heat:0, beat:0, bar:0, sq:0, camDip:0, ghostT:0, prevCombo:1,
+    bestDist:0, recHit:false, recWarn:false,
     zone:-1, zoneLeft:0, lastZone:-1, nextZone:300, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
@@ -1194,6 +1221,24 @@ function spawnRow(){
     G.crystalQueue={lane:freeLane,y:crystalY,n:n,z:SPAWN_Z-2.5,step:3.1};
   }
 }
+/* Rows spawn 155m out, so a cold start leaves the player running through an empty
+   city for eleven seconds - on every single retry. Pre-fill the corridor instead. */
+function seedWorld(){
+  var z=-56, i, step=25;
+  while(z>SPAWN_Z+10){
+    var n0=obPool.live.length, c0=crPool.live.length;
+    spawnRow(); flushCrystals();
+    var shift=z-SPAWN_Z;
+    for(i=n0;i<obPool.live.length;i++){
+      var o=obPool.live[i]; o.z+=shift; o.mesh.position.z=o.z;
+    }
+    for(i=c0;i<crPool.live.length;i++){
+      var c=crPool.live[i]; c.z+=shift; c.mesh.position.z=c.z;
+    }
+    z-=step;
+  }
+  G.gapLeft=step;
+}
 function spawnCrystalWave(){
   var lane=(Math.random()*3)|0, n=5+((Math.random()*4)|0);
   for(var i=0;i<n;i++){
@@ -1246,6 +1291,25 @@ function nearMiss(){
   flash('#6EE7F9',0.22);
   pop('NEAR MISS +'+pts,'volt');
 }
+/* ---- personal best, used as a target during the run ---- */
+var recTimer=0;
+function hideRec(){ if(recTimer){ clearTimeout(recTimer); recTimer=0; } elRec.hidden=true; }
+function showRec(title,sub,ms){
+  recN.textContent=title; recS.textContent=sub;
+  elRec.hidden=false;
+  recCard.style.animation='none'; void recCard.offsetWidth; recCard.style.animation='';
+  if(recTimer) clearTimeout(recTimer);
+  recTimer=setTimeout(function(){ recTimer=0; elRec.hidden=true; },ms||1700);
+}
+function hitRecord(){
+  G.recHit=true;
+  G.slowT=0.42; shake(0.5); flash('#FFD166',0.42);
+  burst(G.px,1.2,0,0xFFD166,26,7);
+  burst(G.px,1.2,0,0xF7EFE6,12,5);
+  SFX.record();
+  showRec('NEW RECORD','ここから先は未踏',1900);
+}
+
 /* ---- pause ----
    Also fires when the tab goes away, so switching windows never costs a run. */
 var elPause=$('#pauseUi'), btnPause=$('#btnPause'), pScore=$('#pScore'), pDist=$('#pDist');
@@ -1281,6 +1345,7 @@ function finishResume(){
 }
 function leavePause(){
   G.count=0; elPause.hidden=true; elGo.hidden=true; btnPause.hidden=true;
+  hideRec();
 }
 btnPause.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); pauseGame(); });
 $('#btnResume').addEventListener('click',beginResume);
@@ -1381,6 +1446,7 @@ function die(o){
   burst(G.px,G.py+0.8,0,0xFF7A59,32,9);
   burst(G.px,G.py+0.8,0,0xF7EFE6,14,6);
   rig.visible=false; blob.visible=false; btnPause.hidden=true;
+  hideRec();
   G.zone=-1; G.zoneSpawnIx=-1; G.zonePending=false;
   hideZoneUi();
   commitRun();
@@ -1477,6 +1543,7 @@ app.addEventListener('touchend',function(e){
 var uScore=$('#uScore'), uDist=$('#uDist'), uSpd=$('#uSpd'), uBest=$('#uBest'), uRuns=$('#uRuns');
 var elHud=$('#hud'), elTitle=$('#title'), elOver=$('#over'), elCombo=$('#combo');
 var comboN=$('#comboN'), comboFill=$('#comboFill'), elHint=$('#hint'), btnMute=$('#mute');
+var uRec=$('#uRec'), elRec=$('#recUi'), recCard=$('#recCard'), recN=$('#recN'), recS=$('#recS');
 
 var muteLabel=$('#muteLabel');
 function paintMute(){
@@ -1583,16 +1650,18 @@ $('#tip').textContent='TIP — '+TIPS[(Math.random()*TIPS.length)|0];
 
 function refreshBest(){
   uBest.textContent=(store.get('best',0)|0).toLocaleString('en-US');
-  var r=store.get('runs',0)|0;
-  uRuns.textContent=r?('/ '+r+' RUNS'):'';
+  var r=store.get('runs',0)|0, bd=store.get('bestDist',0)|0;
+  uRuns.textContent=(bd?('/ '+bd.toLocaleString('en-US')+'m '):'')+(r?('/ '+r+' RUNS'):'');
 }
 refreshBest();
 
 function startRun(){
   ac(); BGM.start(); SFX.go();
-  cancelCard(); elDeath.hidden=true; leavePause();
+  cancelCard(); elDeath.hidden=true; leavePause(); hideRec();
   resetGame();
   G.locked=lockedIds();
+  G.bestDist=store.get('bestDist',0)|0;
+  seedWorld();
   G.state='run'; G.bdGap=6;
   elTitle.hidden=true; elOver.hidden=true; elHud.hidden=false;
   elHint.style.opacity='1';
@@ -1780,6 +1849,8 @@ if(navigator.share){
 function commitRun(){
   var best=store.get('best',0)|0, sc=Math.round(G.score), isBest=sc>best;
   if(isBest) store.set('best',sc);
+  var bd=Math.round(G.dist);
+  if(bd>(store.get('bestDist',0)|0)) store.set('bestDist',bd);
   store.set('runs',(store.get('runs',0)|0)+1);
 
   PROF.dist+=Math.round(G.dist); PROF.runs++;
@@ -1907,14 +1978,19 @@ function step(raw){
   if(G.slowT>0) G.slowT-=raw;
 
   if(G.state==='run'){
-    G.intro=Math.min(1,G.intro+raw*1.3);
-    G.speed=Math.min(SPD_MAX,SPD_MIN+G.dist*0.0135)*(0.45+0.55*G.intro);
+    G.intro=Math.min(1,G.intro+raw*1.8);
+    G.speed=Math.min(SPD_MAX,SPD_MIN+G.dist*0.0135)*(0.6+0.4*G.intro);
     if(zoneIs('surge')) G.speed*=1.3;
     if(G.speed>G.speedPeak) G.speedPeak=G.speed;
     adv=G.speed*dt; G.dist+=adv; G.score+=adv*(zoneIs('surge')?2:1);
     if(G.combo>1){ G.comboT-=dt; if(G.comboT<=0) G.combo=1; }
     var want=Math.floor(G.dist/650)%BIOMES.length;
     if(want!==biomeIx) applyBiome(want,false);
+
+    if(G.bestDist>0&&!G.recHit){
+      if(!G.recWarn&&G.bestDist-G.dist<=100){ G.recWarn=true; SFX.recWarn(); }
+      if(G.dist>=G.bestDist) hitRecord();
+    }
 
     if(G.zoneSpawnIx>=0){
       G.zoneSpawnLeft-=adv;
@@ -2121,6 +2197,17 @@ function step(raw){
     uScore.textContent=fmt(G.score);
     uDist.textContent=Math.round(G.dist);
     uSpd.textContent=Math.round(G.speed*3.6);
+    if(G.bestDist>0){
+      uRec.hidden=false;
+      if(G.recHit){
+        uRec.textContent='RECORD +'+Math.round(G.dist-G.bestDist)+'m';
+        uRec.className='recline mono done';
+      } else {
+        var left=Math.max(0,Math.round(G.bestDist-G.dist));
+        uRec.textContent=(left<=150?('BEST まで '+left+'m'):('BEST '+fmt(G.bestDist)+'m'));
+        uRec.className='recline mono'+(left<=150?' near':'');
+      }
+    } else uRec.hidden=true;
     if(G.combo>1){
       elCombo.classList.add('on');
       comboN.textContent='x'+G.combo;
