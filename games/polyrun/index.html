@@ -67,7 +67,8 @@ body{
 #comboBar i{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left}
 #hint{font-size:11px;letter-spacing:.06em;color:rgba(247,239,230,.72);
   text-shadow:0 1px 6px rgba(11,7,20,.9);transition:opacity .6s}
-#ctl{display:flex;align-items:flex-end;justify-content:flex-end;pointer-events:none;z-index:5}
+#ctl{display:flex;align-items:flex-end;gap:10px;pointer-events:none;z-index:5}
+#mute{margin-left:auto}
 #mute{pointer-events:auto;touch-action:manipulation;background:rgba(11,7,20,.62);
   border:1px solid rgba(110,231,249,.5);color:var(--volt);font:inherit;font-size:11px;
   letter-spacing:.14em;padding:9px 14px;clip-path:var(--cham-s);cursor:pointer;
@@ -78,6 +79,14 @@ body{
   box-shadow:0 0 8px var(--volt);transition:background .15s,box-shadow .15s}
 #mute.off{border-color:rgba(247,239,230,.26);color:var(--dim)}
 #mute.off i{background:var(--dim);box-shadow:none}
+#btnPause{pointer-events:auto;touch-action:manipulation;background:rgba(11,7,20,.62);
+  border:1px solid rgba(247,239,230,.3);color:var(--bone);font:inherit;font-size:11px;
+  letter-spacing:.14em;padding:9px 16px;clip-path:var(--cham-s);cursor:pointer}
+#btnPause:hover{border-color:var(--gold);color:var(--gold)}
+#btnPause:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.pstats{display:flex;gap:26px;margin-top:18px}
+.pstats .k{font-size:9px;letter-spacing:.2em;color:var(--dim)}
+.pstats .v{font-size:30px;line-height:1.1;color:var(--bone)}
 
 /* ---------- floating score pops ---------- */
 /* ---------- event zones ---------- */
@@ -135,6 +144,8 @@ body{
 .eyebrow{font-size:10px;letter-spacing:.34em;color:var(--volt);margin:0 0 10px}
 h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
   color:var(--bone);text-shadow:4px 4px 0 var(--haze),8px 8px 0 rgba(110,231,249,.35)}
+.jp-title{font-family:"Zen Kaku Gothic New",system-ui,sans-serif;font-weight:900;
+  letter-spacing:.06em;text-shadow:0 3px 0 var(--haze)}
 .tagline{margin:14px 0 0;font-size:14px;line-height:1.75;color:rgba(247,239,230,.82)}
 .keys{margin:20px 0 0;display:grid;grid-template-columns:auto 1fr;gap:7px 14px;align-items:baseline;
   font-size:12.5px;border-top:1px solid rgba(247,239,230,.14);padding-top:16px}
@@ -357,6 +368,20 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
     </div>
   </div>
 
+  <div class="layer screen" id="pauseUi" hidden>
+    <div class="panel">
+      <p class="eyebrow">PAUSED</p>
+      <h1 class="jp-title" style="font-size:clamp(32px,8vw,48px)">一時停止</h1>
+      <div class="pstats">
+        <div><div class="k">SCORE</div><div class="v mono" id="pScore">0</div></div>
+        <div><div class="k">DISTANCE</div><div class="v mono" id="pDist">0</div></div>
+      </div>
+      <button class="btn disp" id="btnResume" type="button">RESUME</button>
+      <button class="btn ghost" id="btnPRetry" type="button">最初からやり直す</button>
+      <button class="btn ghost" id="btnPHome" type="button">タイトルへ</button>
+    </div>
+  </div>
+
   <div class="layer screen" id="fail">
     <div class="panel">
       <p class="eyebrow">WEBGL UNAVAILABLE</p>
@@ -368,6 +393,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
   </div>
 
   <div class="layer" id="ctl">
+    <button id="btnPause" type="button" hidden>&#10073;&#10073; PAUSE</button>
     <button id="mute" type="button" aria-pressed="false"><i></i><span id="muteLabel">SOUND ON</span></button>
   </div>
 
@@ -610,6 +636,20 @@ var BGM={
     this.on=false;
     if(this.timer){ clearInterval(this.timer); this.timer=0; }
     if(AC&&musG) musG.gain.setTargetAtTime(0.0001,AC.currentTime,0.2);
+  },
+  hold:function(){
+    if(!this.on) return;
+    this.on=false;
+    if(this.timer){ clearInterval(this.timer); this.timer=0; }
+    if(AC&&musG) musG.gain.setTargetAtTime(0.0001,AC.currentTime,0.07);
+  },
+  unhold:function(){
+    if(this.on||muted) return;
+    var c=ac(); if(!c) return;
+    this.on=true; this.next=c.currentTime+0.08;   /* this.step is kept, so the loop continues */
+    musG.gain.setTargetAtTime(this.level,c.currentTime,0.2);
+    var self=this;
+    this.timer=setInterval(function(){ self.tick(); },26);
   },
   duck:function(){
     if(!AC||!musG) return;
@@ -924,7 +964,7 @@ function resetGame(){
     state:'menu', dist:0, score:0, speed:SPD_MIN, lane:1, px:0, py:0, vy:0,
     air:false, slideT:0, slideAmt:0, jumpBuf:0, slideBuf:0, phase:0, combo:1, comboT:0, maxCombo:1, near:0, crystals:0,
     speedPeak:SPD_MIN, shown:false, bdGap:6,
-    cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9,
+    cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9, count:0,
     zone:-1, zoneLeft:0, lastZone:-1, nextZone:300, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
@@ -1034,6 +1074,53 @@ function nearMiss(){
   flash('#6EE7F9',0.22);
   pop('NEAR MISS +'+pts,'volt');
 }
+/* ---- pause ----
+   Also fires when the tab goes away, so switching windows never costs a run. */
+var elPause=$('#pauseUi'), btnPause=$('#btnPause'), pScore=$('#pScore'), pDist=$('#pDist');
+var COUNT_STEP=0.5, COUNT_N=3;
+function pauseGame(){
+  if(G.state!=='run') return;
+  G.state='pause'; G.count=0;
+  pScore.textContent=fmt(G.score);
+  pDist.textContent=Math.round(G.dist)+'m';
+  btnPause.hidden=true;
+  elGo.hidden=true;
+  elPause.hidden=false;
+  BGM.hold();
+}
+function showCount(n){
+  var sp=elGo.firstElementChild;
+  sp.textContent=(n>0?String(n):'GO!');
+  elGo.hidden=false;
+  sp.style.animation='none'; void sp.offsetWidth; sp.style.animation='';
+  tone(n>0?520:880,n>0?660:1320,0.1,'square',0.07);
+}
+function beginResume(){
+  if(G.state!=='pause'||G.count>0) return;
+  elPause.hidden=true;
+  G.count=COUNT_STEP*COUNT_N;
+  showCount(COUNT_N);
+  BGM.unhold();
+}
+function finishResume(){
+  G.count=0; G.state='run';
+  elGo.hidden=true;
+  btnPause.hidden=false;
+}
+function leavePause(){
+  G.count=0; elPause.hidden=true; elGo.hidden=true; btnPause.hidden=true;
+}
+btnPause.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); pauseGame(); });
+$('#btnResume').addEventListener('click',beginResume);
+$('#btnPRetry').addEventListener('click',function(){ leavePause(); startRun(); });
+$('#btnPHome').addEventListener('click',function(){
+  leavePause(); cancelCard(); elDeath.hidden=true;
+  elOver.hidden=true; elHud.hidden=true; elTitle.hidden=false;
+  G.state='menu'; hideZoneUi(); refreshBest(); renderDaily(); renderSkins();
+});
+D.addEventListener('visibilitychange',function(){ if(D.hidden) pauseGame(); });
+W.addEventListener('blur',function(){ pauseGame(); });
+
 /* ---- event zones ---- */
 var elZoneUi=$('#zoneUi'), elZoneCard=$('#zoneCard'), elZoneName=$('#zoneName'),
     elZoneJp=$('#zoneJp'), elZoneFill=$('#zoneFill'), elZoneTint=$('#zoneTint');
@@ -1093,8 +1180,9 @@ function laneWasFree(o){
    "slide" reads as the game not watching, so the state at impact decides the line. */
 function killCause(o){
   var kind=(o&&o.kind)||'tall', k=KILL[kind]||KILL.tall;
-  var air=G.air, tried=(G.t-G.tSlide)<0.3,
-      sliding=((G.slideT>0&&!G.air)||tried), free=laneWasFree(o), alt=free?'、または隣のレーンに逃げる':'';
+  var air=G.air, free=laneWasFree(o), alt=free?'、または隣のレーンに逃げる':'';
+  var sinceSlide=G.t-G.tSlide, sinceJump=G.t-G.tJump;
+  var sliding=(G.slideT>0&&!air);
   var hint;
   if(kind==='tall'){
     hint=air?'紫の柱は跳び越えられない。レーンを変えてかわす'
@@ -1103,10 +1191,12 @@ function killCause(o){
     if(air) hint=(G.vy>0?'ジャンプが遅かった — まだ上がりきっていない'
                         :'ジャンプが早かった — もう落下しはじめている');
     else if(sliding) hint='スライド中は跳べない。'+k.name+'はジャンプで越す';
+    else if(sinceJump<1.2) hint='ジャンプが早かった — もう着地してしまっている';
     else hint=k.name+'はジャンプで飛び越す'+alt;
   } else {
     if(air) hint='ジャンプ中は姿勢を下げられない。'+k.name+'はスライドでくぐる';
-    else if(sliding) hint='スライドが遅かった — もう少し手前で ↓';
+    else if(sliding||sinceSlide<0.3) hint='スライドが遅かった — もう少し手前で ↓';
+    else if(sinceSlide<1.2) hint='スライドが早かった — もう姿勢が戻っている';
     else hint=k.name+'はスライドでくぐる'+alt;
   }
   return {act:k.act,c:k.c,jp:hint};
@@ -1118,7 +1208,7 @@ function die(o){
   shake(1.2); flash('#FF4D6D',0.75); SFX.crash(); BGM.duck();
   burst(G.px,G.py+0.8,0,0xFF7A59,32,9);
   burst(G.px,G.py+0.8,0,0xF7EFE6,14,6);
-  rig.visible=false; blob.visible=false;
+  rig.visible=false; blob.visible=false; btnPause.hidden=true;
   G.zone=-1; G.zoneSpawnIx=-1; G.zonePending=false;
   hideZoneUi();
   commitRun();
@@ -1159,6 +1249,15 @@ D.addEventListener('keydown',function(e){
   var k=e.key;
   if(k===' '||k==='ArrowUp'||k==='ArrowDown'||k==='ArrowLeft'||k==='ArrowRight') e.preventDefault();
   if(k==='m'||k==='M'){ toggleMute(); return; }
+  if(k==='Escape'||k==='p'||k==='P'){
+    if(G.state==='run') pauseGame();
+    else if(G.state==='pause') beginResume();
+    return;
+  }
+  if(G.state==='pause'){
+    if(k===' '||k==='Enter') beginResume();
+    return;
+  }
   if(G.state==='dead'){
     if(G.deadT>0.28&&(k===' '||k==='Enter'||k==='r'||k==='R')) startRun();
     return;
@@ -1216,7 +1315,7 @@ function toggleMute(){
   muted=!muted; store.set('muted',muted);
   paintMute();
   applyMute();
-  if(!muted){ ac(); BGM.start(); SFX.lane(); }
+  if(!muted){ ac(); if(G.state!=='pause') BGM.start(); SFX.lane(); }
 }
 paintMute();
 btnMute.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); toggleMute(); });
@@ -1318,22 +1417,24 @@ refreshBest();
 
 function startRun(){
   ac(); BGM.start(); SFX.go();
-  cancelCard(); elDeath.hidden=true;
+  cancelCard(); elDeath.hidden=true; leavePause();
   resetGame();
   G.locked=lockedIds();
   G.state='run'; G.bdGap=6;
   elTitle.hidden=true; elOver.hidden=true; elHud.hidden=false;
   elHint.style.opacity='1';
   setTimeout(function(){ elHint.style.opacity='0'; },6500);
+  btnPause.hidden=false;
   elGo.hidden=false;
   var sp=elGo.firstElementChild;
+  sp.textContent='GO!';
   sp.style.animation='none'; void sp.offsetWidth; sp.style.animation='';
-  setTimeout(function(){ elGo.hidden=true; },760);
+  setTimeout(function(){ if(G.state==='run') elGo.hidden=true; },760);
 }
 $('#btnStart').addEventListener('click',startRun);
 $('#btnRetry').addEventListener('click',startRun);
 $('#btnHome').addEventListener('click',function(){
-  cancelCard(); elDeath.hidden=true;
+  cancelCard(); elDeath.hidden=true; leavePause();
   elOver.hidden=true; elTitle.hidden=false; elHud.hidden=true;
   G.state='menu'; refreshBest(); renderDaily(); renderSkins();
   $('#tip').textContent='TIP — '+TIPS[(Math.random()*TIPS.length)|0];
@@ -1597,6 +1698,17 @@ W.addEventListener('resize',resize);
 
 function step(raw){
   var i,adv=0;
+  if(G.state==='pause'){
+    if(G.count>0){
+      var was=Math.ceil(G.count/COUNT_STEP);
+      G.count-=raw;
+      var now=Math.ceil(G.count/COUNT_STEP);
+      if(now!==was&&now>0) showCount(now);
+      if(G.count<=0) finishResume();
+    }
+    return;
+  }
+  G.t+=raw;              /* run clock; drives the "did they try, and how long ago" checks */
   var tgt=1;
   if(G.state==='dead'&&G.deadT<0.2) tgt=0.09;
   else if(G.slowT>0) tgt=0.42;
@@ -1674,7 +1786,7 @@ function step(raw){
   var sliding=(G.slideT>0&&!G.air);
   G.slideAmt+=((sliding?1:0)-G.slideAmt)*Math.min(1,raw*18);
 
-  if(G.state!=='dead'&&G.state!=='over'){
+  if(G.state!=='dead'&&G.state!=='over'&&G.state!=='pause'){
     G.phase+=dt*(6+G.speed*0.42);
     var tilt=sliding?-1.0:(G.air?-0.22:0), drop=sliding?-0.4:0;
     rig.rotation.x+=(tilt-rig.rotation.x)*Math.min(1,raw*18);
