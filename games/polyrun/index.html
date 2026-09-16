@@ -121,13 +121,18 @@ body{
 @keyframes blink{50%{opacity:.35}}
 
 #recUi{pointer-events:none;display:flex;justify-content:center;align-items:flex-start}
-.rec-card{margin-top:150px;text-align:center;color:var(--gold);
-  background:rgba(11,7,20,.72);border:1px solid currentColor;padding:12px 26px 14px;
+.rec-card{margin-top:150px;text-align:center;color:var(--gold);max-width:min(420px,100%);
+  background:rgba(11,7,20,.72);border:1px solid currentColor;padding:12px 22px 14px;
   clip-path:var(--cham-s);animation:zoneIn .32s ease-out}
 .rec-n{font-size:clamp(22px,6vw,34px);line-height:1;letter-spacing:.04em;
   text-shadow:0 0 26px currentColor}
-.rec-s{margin-top:7px;font-size:11px;letter-spacing:.14em;color:rgba(247,239,230,.85)}
+.rec-s{margin-top:7px;font-size:11px;line-height:1.7;letter-spacing:.1em;
+  color:rgba(247,239,230,.85);text-wrap:balance}
 .recline{font-size:10px;letter-spacing:.14em;color:var(--dim);margin-top:5px}
+.nmline{font-size:10px;letter-spacing:.14em;color:var(--volt);margin-top:6px;opacity:.75}
+.nmline b{font-size:14px;letter-spacing:0}
+.nmline.hot{opacity:1;color:var(--gold)}
+.pop.big{font-size:27px;font-weight:700}
 .recline.near{color:var(--gold);animation:pendPulse .55s ease-in-out infinite}
 .recline.done{color:var(--gold)}
 @keyframes pendPulse{50%{transform:scale(1.08);filter:brightness(1.3)}}
@@ -267,6 +272,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
         <div class="tile">
           <div class="k">SCORE</div>
           <div class="v mono" id="uScore">0</div>
+          <div class="nmline mono" id="uNear" hidden>NEAR MISS <b>0</b></div>
         </div>
         <div class="tile r">
           <div class="k">DISTANCE / SPEED</div>
@@ -1142,6 +1148,10 @@ var ZONES=[
   {id:'surge', name:'SPEED SURGE', jp:'加速 — スコア2倍',            color:'#FF7A59',len:260,bonus:350}
 ];
 var PIPE=155;   /* metres a freshly spawned row travels before it reaches the fox */
+/* Most runs used to end before 650m, so the second biome and the first event
+   zone were content almost nobody reached. Both now start inside the first
+   twenty seconds of play. */
+function biomeAt(d){ return d<400?0:(1+Math.floor((d-400)/500))%BIOMES.length; }
 function zoneIs(id){ return G.zone>=0 && ZONES[G.zone].id===id; }
 function zoneSpawnIs(id){ return G.zoneSpawnIx>=0 && ZONES[G.zoneSpawnIx].id===id; }
 
@@ -1159,8 +1169,8 @@ function resetGame(){
     speedPeak:SPD_MIN, shown:false, bdGap:6,
     cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9, count:0,
     heat:0, beat:0, bar:0, sq:0, camDip:0, ghostT:0, prevCombo:1,
-    bestDist:0, recHit:false, recWarn:false,
-    zone:-1, zoneLeft:0, lastZone:-1, nextZone:300, zonesDone:0,
+    bestDist:0, recHit:false, recWarn:false, perfect:0, taughtNear:false,
+    zone:-1, zoneLeft:0, lastZone:-1, nextZone:40, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
   };
@@ -1263,9 +1273,9 @@ function flash(color,amt){
   elFlash.style.background=color; flashPeak=amt; flashT=0.28;
 }
 function shake(a){ if(!REDUCE) G.shake=Math.max(G.shake,a); }
-function pop(text,cls){
+function pop(text,cls,big){
   var e=D.createElement('div');
-  e.className='pop '+(cls||'gold'); e.textContent=text;
+  e.className='pop '+(cls||'gold')+(big?' big':''); e.textContent=text;
   e.style.marginLeft=((Math.random()*2-1)*60|0)+'px';
   elPops.appendChild(e);
   setTimeout(function(){ if(e.parentNode) e.parentNode.removeChild(e); },1000);
@@ -1284,18 +1294,33 @@ function collect(p){
   burst(p.x,p.y,p.z,0xFFD166,9,4.5);
   pop('+'+pts,'gold');
 }
-function nearMiss(){
+/* Graded by how little room was left. A binary "you grazed it" gives nothing to
+   perfect on the two-hundredth run; three tiers do. */
+var NM_TIERS=[
+  {max:0.18,name:'PERFECT',mult:2.0,slow:0.34,shake:0.34,cls:'gold',big:true},
+  {max:0.33,name:'GREAT',  mult:1.5,slow:0.28,shake:0.26,cls:'volt',big:true},
+  {max:0.52,name:'NICE',   mult:1.0,slow:0.22,shake:0.18,cls:'volt',big:false}
+];
+function nearMiss(clear){
+  var t=NM_TIERS[2],i;
+  for(i=0;i<NM_TIERS.length;i++){ if(clear<NM_TIERS[i].max){ t=NM_TIERS[i]; break; } }
   addCombo(); G.near++;
-  var pts=25*G.combo; G.score+=pts;
-  G.slowT=0.24; shake(0.2); SFX.near();
-  flash('#6EE7F9',0.22);
-  pop('NEAR MISS +'+pts,'volt');
+  if(t.name==='PERFECT') G.perfect++;
+  var pts=Math.round(25*G.combo*t.mult); G.score+=pts;
+  G.slowT=t.slow; shake(t.shake); SFX.near();
+  flash(t.name==='PERFECT'?'#FFD166':'#6EE7F9',t.name==='PERFECT'?0.3:0.22);
+  pop(t.name+' +'+pts,t.cls,t.big);
+  if(!G.taughtNear && !store.get('taughtNear',false)){
+    G.taughtNear=true; store.set('taughtNear',true);
+    showRec('NEAR MISS','ギリギリで避けるほど高得点',2400,'#6EE7F9');
+  }
 }
 /* ---- personal best, used as a target during the run ---- */
 var recTimer=0;
 function hideRec(){ if(recTimer){ clearTimeout(recTimer); recTimer=0; } elRec.hidden=true; }
-function showRec(title,sub,ms){
+function showRec(title,sub,ms,color){
   recN.textContent=title; recS.textContent=sub;
+  recCard.style.color=color||'';
   elRec.hidden=false;
   recCard.style.animation='none'; void recCard.offsetWidth; recCard.style.animation='';
   if(recTimer) clearTimeout(recTimer);
@@ -1365,8 +1390,10 @@ function hideZoneUi(){
   elZoneUi.hidden=true; elZoneTint.style.opacity='0';
 }
 function scheduleZone(){
-  var ix=0, guard=0;
-  do{ ix=(Math.random()*ZONES.length)|0; }while(ix===G.lastZone && guard++<8);
+  var ix=0, guard=0, first=(G.zonesDone===0);
+  do{
+    ix=(Math.random()*ZONES.length)|0;
+  }while((ix===G.lastZone || (first && ZONES[ix].id==='gaunt')) && guard++<12);
   G.zoneSpawnIx=ix; G.lastZone=ix;
   G.zoneSpawnLeft=ZONES[ix].len;
   G.zoneStartAt=G.dist+PIPE;
@@ -1385,7 +1412,7 @@ function activateZone(){
 function endZone(){
   var z=ZONES[G.zone];
   G.zone=-1; G.zonesDone++; G.score+=z.bonus;
-  G.nextZone=290+Math.random()*230;
+  G.nextZone=150+Math.random()*160;
   hideZoneUi(); SFX.zoneEnd(); flash('#F7EFE6',0.2);
   pop('ZONE CLEAR +'+z.bonus,'gold');
 }
@@ -1446,7 +1473,7 @@ function die(o){
   burst(G.px,G.py+0.8,0,0xFF7A59,32,9);
   burst(G.px,G.py+0.8,0,0xF7EFE6,14,6);
   rig.visible=false; blob.visible=false; btnPause.hidden=true;
-  hideRec();
+  hideRec(); uNear.hidden=true;
   G.zone=-1; G.zoneSpawnIx=-1; G.zonePending=false;
   hideZoneUi();
   commitRun();
@@ -1544,6 +1571,7 @@ var uScore=$('#uScore'), uDist=$('#uDist'), uSpd=$('#uSpd'), uBest=$('#uBest'), 
 var elHud=$('#hud'), elTitle=$('#title'), elOver=$('#over'), elCombo=$('#combo');
 var comboN=$('#comboN'), comboFill=$('#comboFill'), elHint=$('#hint'), btnMute=$('#mute');
 var uRec=$('#uRec'), elRec=$('#recUi'), recCard=$('#recCard'), recN=$('#recN'), recS=$('#recS');
+var uNear=$('#uNear');
 
 var muteLabel=$('#muteLabel');
 function paintMute(){
@@ -1763,7 +1791,7 @@ function drawCard(){
   x.fillStyle='rgba(247,239,230,.18)'; x.fillRect(64,556,1072,1);
   ls(x,'0.2em');
   x.fillStyle='#A093B4'; x.font='700 13px "Chivo Mono",monospace';
-  x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  CRYSTALS '+G.crystals
+  x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  PERFECT '+G.perfect+'  /  CRYSTALS '+G.crystals
     +'  /  ZONES '+G.zonesDone+'  /  '+skinById(PROF.skin).name,64,600);
   x.textAlign='right';
   x.fillText(new Date().toISOString().slice(0,10).replace(/-/g,'.'),1136,600);
@@ -1916,7 +1944,7 @@ function renderResult(){
   ovRankC.textContent=R.cap; ovRank.style.borderColor=R.color;
 
   var rows=[['DISTANCE',Math.round(G.dist)+' m'],['MAX COMBO','x'+G.maxCombo],
-            ['NEAR MISS',G.near+''],['ZONES',G.zonesDone+'']];
+            ['NEAR MISS',G.near+(G.perfect?(' ('+G.perfect+'P)'):'')],['ZONES',G.zonesDone+'']];
   ovStats.innerHTML='';
   for(var i=0;i<rows.length;i++){
     var d=D.createElement('div'); d.className='ovs';
@@ -1984,7 +2012,7 @@ function step(raw){
     if(G.speed>G.speedPeak) G.speedPeak=G.speed;
     adv=G.speed*dt; G.dist+=adv; G.score+=adv*(zoneIs('surge')?2:1);
     if(G.combo>1){ G.comboT-=dt; if(G.comboT<=0) G.combo=1; }
-    var want=Math.floor(G.dist/650)%BIOMES.length;
+    var want=biomeAt(G.dist);
     if(want!==biomeIx) applyBiome(want,false);
 
     if(G.bestDist>0&&!G.recHit){
@@ -2001,7 +2029,7 @@ function step(raw){
       G.zoneLeft-=adv;
       elZoneFill.style.transform='scaleX('+Math.max(0,G.zoneLeft/ZONES[G.zone].len)+')';
       if(G.zoneLeft<=0) endZone();
-    } else if(!G.zonePending && G.zoneSpawnIx<0 && G.dist>200){
+    } else if(!G.zonePending && G.zoneSpawnIx<0 && G.dist>20){
       G.nextZone-=adv;
       if(G.nextZone<=0) scheduleZone();
     }
@@ -2117,7 +2145,7 @@ function step(raw){
     }
     if(!o.scored&&o.z>o.halfD+0.7){
       o.scored=true;
-      if(o.minClear>=0&&o.minClear<0.52) nearMiss();
+      if(o.minClear>=0&&o.minClear<0.52) nearMiss(o.minClear);
     }
   }
 
@@ -2208,6 +2236,9 @@ function step(raw){
         uRec.className='recline mono'+(left<=150?' near':'');
       }
     } else uRec.hidden=true;
+    uNear.hidden=false;
+    uNear.innerHTML='NEAR MISS <b>'+G.near+'</b>'+(G.perfect?('  /  PERFECT <b>'+G.perfect+'</b>'):'');
+    uNear.className='nmline mono'+(G.perfect?' hot':'');
     if(G.combo>1){
       elCombo.classList.add('on');
       comboN.textContent='x'+G.combo;
