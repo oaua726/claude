@@ -1170,6 +1170,7 @@ function resetGame(){
     cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9, count:0,
     heat:0, beat:0, bar:0, sq:0, camDip:0, ghostT:0, prevCombo:1,
     bestDist:0, recHit:false, recWarn:false, perfect:0, taughtNear:false,
+    flip:0, flipTarget:0, lean:0, flips:0,
     zone:-1, zoneLeft:0, lastZone:-1, nextZone:40, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
@@ -1485,9 +1486,18 @@ function die(o){
    Without this a jump entered 100ms before landing is silently dropped, which
    reads as the game ignoring you. */
 var JUMP_BUF=0.15, SLIDE_BUF=0.17;
+/* The faster the run, the showier the jump. Turns are chosen from both speed and
+   the airtime actually available, so a low-gravity hop gets the double. */
 function jumpNow(){
   G.air=true; G.vy=JUMP_V*(zoneIs('grav')?0.80:1); G.slideT=0; G.slideBuf=0;
   G.sq=-0.26;                       /* stretch on the way up */
+  var sn=Math.max(0,Math.min(1,(G.speed-SPD_MIN)/(SPD_MAX-SPD_MIN)));
+  var air=2*G.vy/(-GRAV*(zoneIs('grav')?0.45:1));
+  var turns=0;
+  if(sn>=0.16) turns=1;            /* first trick lands around 330m, not 700m */
+  if(turns&&(sn>=0.75||air>1.05)) turns=2;
+  G.flip=0; G.flipTarget=turns*Math.PI*2;
+  if(turns){ G.flips++; noise(0.2,0.05+turns*0.02,1700); }
   SFX.jump(); burst(G.px,0.12,0,0xF7EFE6,5,2.6);
 }
 function slideNow(){
@@ -1791,7 +1801,7 @@ function drawCard(){
   x.fillStyle='rgba(247,239,230,.18)'; x.fillRect(64,556,1072,1);
   ls(x,'0.2em');
   x.fillStyle='#A093B4'; x.font='700 13px "Chivo Mono",monospace';
-  x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  PERFECT '+G.perfect+'  /  CRYSTALS '+G.crystals
+  x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  PERFECT '+G.perfect+'  /  FLIPS '+G.flips+'  /  CRYSTALS '+G.crystals
     +'  /  ZONES '+G.zonesDone+'  /  '+skinById(PROF.skin).name,64,600);
   x.textAlign='right';
   x.fillText(new Date().toISOString().slice(0,10).replace(/-/g,'.'),1136,600);
@@ -2064,11 +2074,20 @@ function step(raw){
   G.px+=(tx-G.px)*Math.min(1,dt*15);
   if(G.jumpBuf>0) G.jumpBuf-=raw;
   if(G.slideBuf>0) G.slideBuf-=raw;
+  if(G.air&&G.flipTarget>0){
+    /* Re-solve the remaining airtime every frame and spread the rotation left over
+       it, so a mid-air fast-fall just spins faster instead of landing sideways. */
+    var gMag=-GRAV*(zoneIs('grav')?0.45:1);
+    var tR=(G.vy+Math.sqrt(Math.max(0,G.vy*G.vy+2*gMag*G.py)))/gMag;
+    if(tR>0.03) G.flip=Math.min(G.flipTarget,G.flip+((G.flipTarget-G.flip)/tR)*dt);
+    else G.flip=G.flipTarget;
+  }
   if(G.air){
     G.vy+=GRAV*(zoneIs('grav')?0.45:1)*dt; G.py+=G.vy*dt;
     if(G.py<=0){
       var fall=-G.vy;
       G.py=0; G.vy=0; G.air=false;
+      G.flip=0; G.flipTarget=0;
       G.sq=Math.min(0.36,0.14+fall*0.018);   /* squash proportional to the drop */
       G.camDip=Math.min(0.3,0.1+fall*0.014);
       dustRing(G.px);
@@ -2087,15 +2106,17 @@ function step(raw){
   if(G.state!=='dead'&&G.state!=='over'&&G.state!=='pause'){
     G.phase+=dt*(6+G.speed*0.42);
     var tilt=sliding?-1.0:(G.air?-0.22:0), drop=sliding?-0.4:0;
-    rig.rotation.x+=(tilt-rig.rotation.x)*Math.min(1,raw*18);
+    G.lean+=(tilt-G.lean)*Math.min(1,raw*18);
+    rig.rotation.x=G.lean-G.flip;
     rig.position.y+=(drop-rig.position.y)*Math.min(1,raw*18);
+    var tuck=(G.flipTarget>0);
     for(i=0;i<4;i++){
-      legs[i].rotation.x=G.air?(-0.55+i*0.2):Math.sin(G.phase+(i<2?0:Math.PI)+(i%2?Math.PI:0))*0.95;
+      legs[i].rotation.x=tuck?-1.25:(G.air?(-0.55+i*0.2):Math.sin(G.phase+(i<2?0:Math.PI)+(i%2?Math.PI:0))*0.95);
     }
     var bob=(G.air||sliding)?0:Math.abs(Math.sin(G.phase))*0.07;
     body.position.y=0.8+bob; head.position.y=1.3+bob*0.7;
-    tail.rotation.y=Math.sin(G.phase*0.5)*0.45;
-    tail.rotation.x=0.18+Math.sin(G.phase*0.5)*0.15;
+    tail.rotation.y=tuck?0:Math.sin(G.phase*0.5)*0.45;
+    tail.rotation.x=tuck?0.55:(0.18+Math.sin(G.phase*0.5)*0.15);
   }
   G.sq+=(0-G.sq)*Math.min(1,raw*11);
   G.camDip+=(0-G.camDip)*Math.min(1,raw*9);
