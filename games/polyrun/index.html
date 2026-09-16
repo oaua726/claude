@@ -242,7 +242,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
             <dt>KEYBOARD</dt><dd>← → 移動 / SPACE・↑ ジャンプ / ↓ スライド</dd>
             <dt>TOUCH</dt><dd>左右スワイプで移動 / タップ・上スワイプでジャンプ / 下スワイプでスライド</dd>
             <dt>NEAR MISS</dt><dd>障害物をすれすれで通過するとスローモーション＋ボーナス</dd>
-            <dt>ZONE</dt><dd>低重力・密集地帯・左右反転など5種。抜け切るとボーナス</dd>
+            <dt>ZONE</dt><dd>低重力・密集地帯・加速など4種。抜け切るとボーナス</dd>
           </dl>
           <div class="sect">
             <h2 class="sh">FOX<em id="skinCount"></em></h2>
@@ -838,7 +838,6 @@ var ZONES=[
   {id:'grav',  name:'LOW GRAVITY', jp:'低重力 — ジャンプが伸びる',   color:'#6EE7F9',len:270,bonus:300},
   {id:'rush',  name:'CRYSTAL RUSH',jp:'障害物なし — 拾い切れ',       color:'#FFD166',len:230,bonus:250},
   {id:'gaunt', name:'GAUNTLET',    jp:'密集地帯 — 間隔が詰まる',     color:'#FF4D6D',len:250,bonus:450},
-  {id:'mirror',name:'MIRROR',      jp:'左右反転 — 操作が逆になる',   color:'#B45CE0',len:190,bonus:400},
   {id:'surge', name:'SPEED SURGE', jp:'加速 — スコア2倍',            color:'#FF7A59',len:260,bonus:350}
 ];
 var PIPE=155;   /* metres a freshly spawned row travels before it reaches the fox */
@@ -1022,7 +1021,6 @@ function doSlide(){
 }
 function doLane(dir){
   if(G.state!=='run') return;
-  if(zoneIs('mirror')) dir=-dir;
   var n=G.lane+dir; if(n<0||n>2) return;
   G.lane=n; SFX.lane();
 }
@@ -1164,7 +1162,7 @@ var TIPS=[
   '青いバーはスライド、赤い壁はジャンプ、紫の柱はレーン移動。色で判断する。',
   '空中で ↓ を押すと急降下。着地を早めて次の障害物に備えられる。',
   '650m ごとに景色が変わる。夜明けまで辿り着けるか。',
-  '特殊ゾーンは抜け切るとボーナス。MIRROR だけは操作が左右逆になるので落ち着いて。',
+  '特殊ゾーンは抜け切るとボーナス。GAUNTLET は間隔が詰まるぶん配点が一番高い。',
   'CRYSTAL RUSH は障害物ゼロ。コンボを一気に最大まで積む稼ぎ場。',
   'デイリーミッションは毎日0時に入れ替わる。3つ揃えると ALL CLEAR。'
 ];
