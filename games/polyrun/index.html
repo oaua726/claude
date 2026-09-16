@@ -66,7 +66,8 @@ body{
 #comboBar{height:4px;width:110px;background:rgba(247,239,230,.18);margin-top:6px}
 #comboBar i{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left}
 #hint{font-size:11px;letter-spacing:.06em;color:rgba(247,239,230,.72);
-  text-shadow:0 1px 6px rgba(11,7,20,.9);transition:opacity .6s}
+  text-shadow:0 1px 6px rgba(11,7,20,.9);transition:opacity .6s;
+  margin-bottom:42px}   /* clears the PAUSE button in the #ctl bar below */
 #ctl{display:flex;align-items:flex-end;gap:10px;pointer-events:none;z-index:5}
 #mute{margin-left:auto}
 #lang{pointer-events:auto;touch-action:manipulation;background:rgba(11,7,20,.62);
@@ -425,25 +426,17 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
   <div id="toast"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+/* ============================= language =============================
+   This runs BEFORE three.js so the words are on screen while the 600KB of
+   renderer is still downloading, and so the WebGL-failure notice can still
+   explain itself when three.js never arrives at all. The game script picks
+   the module up from window.PolyLang. */
 (function(){
-'use strict';
-var D=document, W=window;
-function $(s){return D.querySelector(s);}
-var REDUCE = !!(W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var D=document;
+function read(){ try{ return JSON.parse(localStorage.getItem('polyrun.lang')); }catch(e){ return null; } }
+function write(v){ try{ localStorage.setItem('polyrun.lang',JSON.stringify(v)); }catch(e){} }
 
-if(typeof THREE==='undefined'){ $('#title').hidden=true; $('#fail').style.display='grid'; return; }
-
-/* ============================= storage ============================= */
-var store={
-  get:function(k,d){try{var v=localStorage.getItem('polyrun.'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
-  set:function(k,v){try{localStorage.setItem('polyrun.'+k,JSON.stringify(v));}catch(e){}}
-};
-
-/* ============================= language ============================= */
-/* The runner itself needs no words, but every label did - which capped the
-   audience at Japanese readers. Strings live here and are swapped live. */
 var I18N={
 ja:{
  'tagline':'夕暮れ・ネオン・夜明け。<strong>400m ごとに景色が変わる</strong>ローポリ都市を、1匹のキツネが全力で駆け抜ける。障害物を<strong>ギリギリで</strong>かわすほどコンボが伸び、道中では<strong>特殊ゾーン</strong>がルールを書き換える。ぶつかったら即終了。',
@@ -574,10 +567,11 @@ en:{
   'Daily missions roll over at midnight. Clear all three for ALL CLEAR.']
 }};
 var lang=(function(){
-  var saved=store.get('lang',null);
+  var saved=read();
   if(saved&&I18N[saved]) return saved;
   return ((navigator.language||navigator.userLanguage||'en')+'').toLowerCase().indexOf('ja')===0?'ja':'en';
 })();
+var touch=false, onChange=null;
 function t(k){
   var s=(I18N[lang]&&I18N[lang][k]);
   if(s===undefined) s=I18N.en[k];
@@ -596,23 +590,50 @@ function applyLang(){
   /* the in-run hint depends on the input device, and the pause headline needs a
      Japanese-capable face only when it is actually set in Japanese */
   var h=D.getElementById('hint');
-  if(h) h.innerHTML=t((typeof touchDev!=='undefined'&&touchDev)?'hint.touch':'hint.kbd');
+  if(h) h.innerHTML=t(touch?'hint.touch':'hint.kbd');
   var pt=D.getElementById('pTitle');
   if(pt) pt.className=(lang==='ja')?'jp-title':'disp';
-}
-/* Strings baked into rendered lists have to be rebuilt, not just re-read. */
-function relocalize(){
-  applyLang();
-  if(typeof renderDaily==='function') renderDaily();
-  if(typeof renderSkins==='function') renderSkins();
-  if(typeof refreshTip==='function') refreshTip();
 }
 applyLang();
 D.getElementById('lang').addEventListener('click',function(e){
   e.stopPropagation(); e.preventDefault();
-  lang=(lang==='ja')?'en':'ja'; store.set('lang',lang);
-  relocalize();
+  lang=(lang==='ja')?'en':'ja'; write(lang);
+  applyLang();
+  /* strings already baked into rendered lists have to be rebuilt, not re-read.
+     The game registers that callback once it has booted. */
+  if(onChange) onChange();
 });
+window.PolyLang={
+  t:t,
+  apply:applyLang,
+  lang:function(){ return lang; },
+  setTouch:function(v){ touch=!!v; applyLang(); },
+  onChange:function(fn){ onChange=fn; }
+};
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+var D=document, W=window;
+function $(s){return D.querySelector(s);}
+var LANG=W.PolyLang, t=LANG.t;
+var REDUCE = !!(W.matchMedia && W.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+if(typeof THREE==='undefined'){
+  /* PolyLang has already written the explanation into #fail, and its own click
+     handler keeps the language toggle working on this screen. */
+  $('#title').hidden=true; $('#fail').style.display='grid';
+  $('#mute').hidden=true;
+  return;
+}
+
+/* ============================= storage ============================= */
+var store={
+  get:function(k,d){try{var v=localStorage.getItem('polyrun.'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem('polyrun.'+k,JSON.stringify(v));}catch(e){}}
+};
 
 /* ============================= profile, skins, dailies ============================= */
 var PROF=(function(){
@@ -1339,7 +1360,7 @@ function resetGame(){
     state:'menu', dist:0, score:0, speed:SPD_MIN, lane:1, px:0, py:0, vy:0,
     air:false, slideT:0, slideAmt:0, jumpBuf:0, slideBuf:0, phase:0, combo:1, comboT:0, maxCombo:1, near:0, crystals:0,
     speedPeak:SPD_MIN, shown:false, bdGap:6,
-    cause:{act:'DODGE',c:'#B45CE0',jp:''}, tJump:-9, tSlide:-9, count:0,
+    cause:{act:'DODGE',c:'#B45CE0',hint:''}, tJump:-9, tSlide:-9, count:0,
     heat:0, beat:0, bar:0, sq:0, camDip:0, ghostT:0, prevCombo:1,
     bestDist:0, recHit:false, recWarn:false, perfect:0, taughtNear:false,
     flip:0, flipTarget:0, lean:0, flips:0,
@@ -1771,7 +1792,7 @@ paintMute();
 btnMute.addEventListener('click',function(e){ e.stopPropagation(); e.preventDefault(); toggleMute(); });
 
 var touchDev=('ontouchstart' in W)||(navigator.maxTouchPoints>0);
-if(touchDev) elHint.innerHTML=t('hint.touch');
+if(touchDev) LANG.setTouch(true);
 
 var missList=$('#missList'), dailyCount=$('#dailyCount');
 var skinRow=$('#skinRow'), skinNote=$('#skinNote'), skinCount=$('#skinCount');
@@ -2438,13 +2459,26 @@ function step(raw){
   if(toastT>0){ toastT-=raw; if(toastT<=0) toast.classList.remove('on'); }
 }
 
-var last=0;
+/* 1. Collision uses a fixed z-window about 1.8m wide, but one frame at 20fps and
+   top speed moves an obstacle 2.3m - and 3.0m inside SPEED SURGE - so obstacles
+   were stepping clean over the test and the player ran through walls (and lost
+   the near-miss credit for them). Advancing the world in slices no longer than
+   SUBSTEP keeps every obstacle inside the window on the way past, whatever the
+   frame rate. */
+var SUBSTEP=0.02, loopErr=null, last=0;
 function frame(now){
   requestAnimationFrame(frame);
   var raw=(now-last)/1000; last=now;
   if(!(raw>0)) raw=0.016;
   if(raw>0.05) raw=0.05;
-  try{ step(raw); }catch(e){}
+  /* One bad frame should not kill the loop - but swallowing it outright turned
+     every bug into a silently frozen game with nothing in the console. */
+  try{
+    var n=Math.ceil(raw/SUBSTEP), sub=raw/n;
+    for(var si=0;si<n;si++) step(sub);
+  }catch(e){
+    if(!loopErr){ loopErr=e; if(W.console&&console.error) console.error('POLYRUN: step() threw',e); }
+  }
   renderer.render(scene,camera);
 }
 
@@ -2456,6 +2490,9 @@ function boot(saved){
   resetGame();
   if(saved && saved.best) store.set('best',Math.max(store.get('best',0)|0,saved.best|0));
   refreshBest();
+  /* Only now are the rendered lists safe to rebuild, so this is where the
+     language toggle gets told how to refresh them. */
+  LANG.onChange(function(){ renderDaily(); renderSkins(); refreshTip(); });
   resize();
   requestAnimationFrame(frame);
 }
