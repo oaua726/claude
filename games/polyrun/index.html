@@ -488,13 +488,13 @@ ja:{
  'r.cause':'<b>{0}</b> — {1}','r.toBest':'ベストまで あと <b>{0}</b> 点',
  'r.missionClear':'MISSION CLEAR','r.unlock':'NEW FOX UNLOCKED',
  'rank.S':'伝説のキツネ','rank.A':'夜明けの走者','rank.B':'ネオンの常連',
- 'rank.C':'夕暮れの新人','rank.D':'次は 5,000 点へ','rankup':'RANK {0}',
+ 'rank.C':'夕暮れの新人','rank.D':'次は 15,000 点へ','rankup':'RANK {0}',
  'p.eyebrow':'PAUSED','p.title':'一時停止','p.score':'SCORE','p.dist':'DISTANCE',
  'sk.req.sunset':'最初から使える','sk.req.frost':'累計距離 3,000m',
  'sk.req.neon':'ニアミス累計 100回','sk.req.ember':'特殊ゾーン 25回クリア',
- 'sk.req.gold':'ベストスコア 40,000',
+ 'sk.req.gold':'ベストスコア 90,000',
  'sk.prog.dist':'{0} / 3,000m','sk.prog.near':'{0} / 100回',
- 'sk.prog.zone':'{0} / 25回','sk.prog.best':'{0} / 40,000',
+ 'sk.prog.zone':'{0} / 25回','sk.prog.best':'{0} / 90,000',
  'sk.locked':'（未解放）','sk.selected':'<b>{0}</b> を選択中',
  'sk.note':'<b>{0}</b> — {1}（現在 {2}）',
  'm.prefix':'1ランで{0}','m.near':'ニアミス {0} 回','m.dist':'{0}m 走る',
@@ -555,13 +555,13 @@ en:{
  'r.cause':'<b>{0}</b> — {1}','r.toBest':'<b>{0}</b> points short of your best',
  'r.missionClear':'MISSION CLEAR','r.unlock':'NEW FOX UNLOCKED',
  'rank.S':'Legend of the city','rank.A':'Daybreak runner','rank.B':'Neon regular',
- 'rank.C':'Sunset rookie','rank.D':'Aim for 5,000','rankup':'RANK {0}',
+ 'rank.C':'Sunset rookie','rank.D':'Aim for 15,000','rankup':'RANK {0}',
  'p.eyebrow':'RUN ON HOLD','p.title':'PAUSED','p.score':'SCORE','p.dist':'DISTANCE',
  'sk.req.sunset':'Available from the start','sk.req.frost':'3,000m total distance',
  'sk.req.neon':'100 near misses in total','sk.req.ember':'Clear 25 event zones',
- 'sk.req.gold':'Best score of 40,000',
+ 'sk.req.gold':'Best score of 90,000',
  'sk.prog.dist':'{0} / 3,000m','sk.prog.near':'{0} / 100',
- 'sk.prog.zone':'{0} / 25','sk.prog.best':'{0} / 40,000',
+ 'sk.prog.zone':'{0} / 25','sk.prog.best':'{0} / 90,000',
  'sk.locked':' (locked)','sk.selected':'<b>{0}</b> selected',
  'sk.note':'<b>{0}</b> — {1} (now {2})',
  'm.prefix':'In one run: {0}','m.near':'{0} near misses','m.dist':'run {0}m',
@@ -671,7 +671,7 @@ var SKINS=[
    req:function(){return PROF.zones>=25;},reqText:function(){return t('sk.req.ember');},
    prog:function(){return t('sk.prog.zone',PROF.zones);}},
   {id:'gold',  name:'GOLD',  fur:0xFFD166,dark:0xC08A1E,cream:0xFFF3D0,
-   req:function(){return (store.get('best',0)|0)>=40000;},reqText:function(){return t('sk.req.gold');},
+   req:function(){return (store.get('best',0)|0)>=90000;},reqText:function(){return t('sk.req.gold');},
    prog:function(){return t('sk.prog.best',(store.get('best',0)|0));}}
 ];
 function skinById(id){
@@ -695,7 +695,7 @@ var MISSIONS=[
   {id:'dist', tiers:[600,900,1300],      text:function(n){return t('m.dist',n);},   get:function(){return G.dist;}},
   {id:'cry',  tiers:[22,32,45],          text:function(n){return t('m.cry',n);},    get:function(){return G.crystals;}},
   {id:'combo',tiers:[6,8,10],            text:function(n){return t('m.combo',n);},  get:function(){return G.maxCombo;}},
-  {id:'score',tiers:[3000,5000,8000],    text:function(n){return t('m.score',fmt(n));},get:function(){return G.score;}},
+  {id:'score',tiers:[9000,14000,20000],  text:function(n){return t('m.score',fmt(n));},get:function(){return G.score;}},
   {id:'zone', tiers:[2,3,4],             text:function(n){return t('m.zone',n);},   get:function(){return G.zonesDone;}}
 ];
 function missById(id){
@@ -1113,35 +1113,44 @@ player.add(rig); scene.add(player);
    dragging the feet; `headG` pivots at the neck so the head can lead a lane
    change and the snout, eyes and ears come with it; the tail hangs off the torso
    in two segments so the tip can lag the base. No extra meshes - only groups. */
+/* Proportions are chosen for the view the player actually has, which is from
+   behind and slightly above: the snout and the eyes are almost never on screen,
+   so the charm has to live in the silhouette - head size, ears, tail and stance.
+   The old fox was a realistic little animal: small head, long back, long legs.
+   This one is built on the usual shorthand for cute - an oversized head, a short
+   chunky body, stubby legs and a tail nearly as big as the body. Same part
+   count, so nothing costs more to draw. */
 var torso=new THREE.Group(); rig.add(torso);
-var headG=new THREE.Group(); headG.position.set(0,1.15,-0.35); torso.add(headG);
+var headG=new THREE.Group(); headG.position.set(0,1.00,-0.30); torso.add(headG);
 
 function part(g,m,x,y,z,parent){ var me=new THREE.Mesh(g,m); me.position.set(x,y,z);
   (parent||torso).add(me); return me; }
-var body=part(new THREE.BoxGeometry(0.78,0.62,1.06),M.fur,0,0.8,0);
-part(new THREE.BoxGeometry(0.5,0.22,1.0),M.cream,0,0.56,0.02);
-var head=part(new THREE.BoxGeometry(0.56,0.5,0.54),M.fur,0,0.15,-0.21,headG);
-part(new THREE.BoxGeometry(0.28,0.22,0.3),M.cream,0,0.05,-0.55,headG);
-var earL=part(new THREE.ConeGeometry(0.15,0.32,4),M.furDark,-0.18,0.51,-0.13,headG);
-var earR=part(new THREE.ConeGeometry(0.15,0.32,4),M.furDark, 0.18,0.51,-0.13,headG);
-part(new THREE.BoxGeometry(0.09,0.09,0.09),M.dark,-0.16,0.19,-0.49,headG);
-part(new THREE.BoxGeometry(0.09,0.09,0.09),M.dark, 0.16,0.19,-0.49,headG);
+var body=part(new THREE.BoxGeometry(0.82,0.60,0.80),M.fur,0,0.70,0.04);
+part(new THREE.BoxGeometry(0.54,0.22,0.72),M.cream,0,0.47,0.06);
+/* the head is deliberately almost as wide as the body */
+var head=part(new THREE.BoxGeometry(0.74,0.66,0.66),M.fur,0,0.17,-0.20,headG);
+part(new THREE.BoxGeometry(0.34,0.26,0.28),M.cream,0,0.03,-0.56,headG);
+var earL=part(new THREE.ConeGeometry(0.25,0.52,4),M.furDark,-0.23,0.50,-0.08,headG);
+var earR=part(new THREE.ConeGeometry(0.25,0.52,4),M.furDark, 0.23,0.50,-0.08,headG);
+part(new THREE.BoxGeometry(0.14,0.14,0.09),M.dark,-0.19,0.20,-0.52,headG);
+part(new THREE.BoxGeometry(0.14,0.14,0.09),M.dark, 0.19,0.20,-0.52,headG);
 /* pivot each ear at its base rather than its middle, so a flick hinges */
-earL.geometry.translate(0,-0.16,0); earL.position.y=0.67;
-earR.geometry.translate(0,-0.16,0); earR.position.y=0.67;
+earL.geometry.translate(0,-0.26,0); earL.position.y=0.62;
+earR.geometry.translate(0,-0.26,0); earR.position.y=0.62;
 
-var tail=new THREE.Group(); tail.position.set(0,0.92,0.52); torso.add(tail);
-var tailM=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.26,0.72),M.fur); tailM.position.z=0.36; tail.add(tailM);
-var tailEnd=new THREE.Group(); tailEnd.position.z=0.7; tail.add(tailEnd);
-var tailTip=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.28,0.24),M.cream); tailTip.position.z=0.1; tailEnd.add(tailTip);
+/* a big pale-tipped brush: the one part that is always in frame */
+var tail=new THREE.Group(); tail.position.set(0,0.78,0.38); torso.add(tail);
+var tailM=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.42,0.66),M.fur); tailM.position.z=0.33; tail.add(tailM);
+var tailEnd=new THREE.Group(); tailEnd.position.z=0.64; tail.add(tailEnd);
+var tailTip=new THREE.Mesh(new THREE.BoxGeometry(0.46,0.46,0.26),M.cream); tailTip.position.z=0.12; tailEnd.add(tailTip);
 
 var legs=[
-  part(new THREE.BoxGeometry(0.19,0.52,0.19),M.furDark,-0.26,0.3,-0.34,rig),
-  part(new THREE.BoxGeometry(0.19,0.52,0.19),M.furDark, 0.26,0.3,-0.34,rig),
-  part(new THREE.BoxGeometry(0.19,0.52,0.19),M.furDark,-0.26,0.3, 0.34,rig),
-  part(new THREE.BoxGeometry(0.19,0.52,0.19),M.furDark, 0.26,0.3, 0.34,rig)
+  part(new THREE.BoxGeometry(0.22,0.40,0.22),M.furDark,-0.25,0.3,-0.28,rig),
+  part(new THREE.BoxGeometry(0.22,0.40,0.22),M.furDark, 0.25,0.3,-0.28,rig),
+  part(new THREE.BoxGeometry(0.22,0.40,0.22),M.furDark,-0.25,0.3, 0.28,rig),
+  part(new THREE.BoxGeometry(0.22,0.40,0.22),M.furDark, 0.25,0.3, 0.28,rig)
 ];
-for(var li=0;li<legs.length;li++){ legs[li].geometry.translate(0,-0.26,0); legs[li].position.y=0.56; }
+for(var li=0;li<legs.length;li++){ legs[li].geometry.translate(0,-0.20,0); legs[li].position.y=0.44; }
 
 var blob=new THREE.Mesh(new THREE.CircleGeometry(0.62,10),
   new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.3,depthWrite:false}));
@@ -2074,12 +2083,18 @@ function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
    attempt to chain anything scored 1,601 by 500m (rank C), 7,323 by 1,500m
    (rank A) and hit the top rank at 2,000m - and that was before FEVER, which
    multiplies everything by up to 2.5. Every rung now costs several times more. */
+/* Set against two measured envelopes rather than by feel. Lower bound is a bot
+   that chains nothing (1,000m 2,915 / 2,000m 9,600 / 4,000m 19,191); upper bound
+   is one with the chain pinned at the ceiling and FEVER maxed the whole way
+   (2,000m 28,816 / 4,000m 45,379 / 8,000m 88,005 / 12,000m 147,709). S sits just
+   inside the top of the measured range - high enough that it takes both the
+   distance and the chaining, low enough that it is demonstrably reachable. */
 var RANKS=[
-  {min:0,     letter:'D',key:'rank.D',color:'#A093B4'},
-  {min:5000,  letter:'C',key:'rank.C',color:'#F7EFE6'},
-  {min:15000, letter:'B',key:'rank.B',color:'#6EE7F9'},
-  {min:35000, letter:'A',key:'rank.A',color:'#FF7A59'},
-  {min:75000, letter:'S',key:'rank.S',color:'#FFD166'}
+  {min:0,      letter:'D',key:'rank.D',color:'#A093B4'},
+  {min:15000,  letter:'C',key:'rank.C',color:'#F7EFE6'},
+  {min:40000,  letter:'B',key:'rank.B',color:'#6EE7F9'},
+  {min:90000,  letter:'A',key:'rank.A',color:'#FF7A59'},
+  {min:180000, letter:'S',key:'rank.S',color:'#FFD166'}
 ];
 function rankIxOf(s){ var i=RANKS.length-1; while(i>0&&s<RANKS[i].min) i--; return i; }
 function rankOf(s){
@@ -2491,7 +2506,7 @@ function step(raw){
        out of a slide is a movement rather than a cut */
     G.airAmt+=((G.air?1:0)-G.airAmt)*ease(26,raw);
     var sl=G.slideAmt, ar=G.airAmt, gnd=(1-ar)*(1-sl);
-    var tilt=sliding?-0.20:(G.air?-0.22:0), drop=sliding?-0.30:0;
+    var tilt=sliding?-0.20:(G.air?-0.22:0), drop=sliding?-0.20:0;
     G.lean+=(tilt-G.lean)*ease(18,raw);
     rig.rotation.x=G.lean-G.flip;
     rig.position.y+=(drop-rig.position.y)*ease(18,raw);
@@ -2544,8 +2559,8 @@ function step(raw){
        the fox is looking at the tarmac it is about to hit - but it also has to
        come *down*, or the ears go straight through the bar it is passing under */
     headG.rotation.x=-torso.rotation.x*0.7-ar*0.18*av+sl*0.16;
-    headG.position.y=1.15-bounce*0.4-sn2*0.09-sl*0.40;
-    headG.position.z=-0.35-sn2*0.06-sl*0.20;   /* reaches forward at speed */
+    headG.position.y=1.00-bounce*0.4-sn2*0.09-sl*0.40;
+    headG.position.z=-0.30-sn2*0.06-sl*0.20;   /* reaches forward at speed */
     headG.rotation.z=G.look*0.55;
 
     /* --- ears: laid back by speed, flicked up by an impact --- */
