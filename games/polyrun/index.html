@@ -63,6 +63,9 @@ body{
 #combo{align-self:flex-start;margin-top:14px;opacity:0;transition:opacity .18s}
 #combo.on{opacity:1}
 #comboN{font-size:44px;line-height:.9;color:var(--gold);text-shadow:0 0 18px rgba(255,209,102,.55)}
+#feverN{font-size:10px;letter-spacing:.16em;color:var(--ink);background:var(--gold);
+  display:inline-block;padding:2px 7px;margin-top:5px;clip-path:var(--cham-s);
+  box-shadow:0 0 14px rgba(255,209,102,.6)}
 #comboBar{height:4px;width:110px;background:rgba(247,239,230,.18);margin-top:6px}
 #comboBar i{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left}
 #hint{font-size:11px;letter-spacing:.06em;color:rgba(247,239,230,.72);
@@ -149,7 +152,8 @@ body{
 #pops{position:absolute;inset:0;pointer-events:none}
 .pop{position:absolute;left:50%;top:44%;white-space:nowrap;font-size:20px;
   letter-spacing:.04em;text-shadow:0 2px 10px rgba(11,7,20,.9);animation:popUp .95s ease-out forwards}
-.pop.volt{color:var(--volt)}.pop.gold{color:var(--gold)}.pop.haze{color:var(--haze)}
+.pop.volt{color:var(--volt)}.pop.gold{color:var(--gold)}
+.pop.dim{color:var(--dim);font-size:18px}.pop.haze{color:var(--haze)}
 @keyframes popUp{
   0%{opacity:0;transform:translate(-50%,10px) scale(.8)}
   18%{opacity:1;transform:translate(-50%,-6px) scale(1.06)}
@@ -292,6 +296,7 @@ h1{margin:0;font-size:clamp(46px,13vw,86px);line-height:.92;
       <div id="combo">
         <div class="k mono" style="font-size:9px;letter-spacing:.2em;color:var(--dim)">COMBO</div>
         <div class="disp" id="comboN">x2</div>
+        <div class="mono" id="feverN" hidden>FEVER &times;1.0</div>
         <div id="comboBar"><i id="comboFill"></i></div>
       </div>
     </div>
@@ -483,13 +488,13 @@ ja:{
  'r.cause':'<b>{0}</b> — {1}','r.toBest':'ベストまで あと <b>{0}</b> 点',
  'r.missionClear':'MISSION CLEAR','r.unlock':'NEW FOX UNLOCKED',
  'rank.S':'伝説のキツネ','rank.A':'夜明けの走者','rank.B':'ネオンの常連',
- 'rank.C':'夕暮れの新人','rank.D':'次は 1000 点へ',
+ 'rank.C':'夕暮れの新人','rank.D':'次は 5,000 点へ','rankup':'RANK {0}',
  'p.eyebrow':'PAUSED','p.title':'一時停止','p.score':'SCORE','p.dist':'DISTANCE',
  'sk.req.sunset':'最初から使える','sk.req.frost':'累計距離 3,000m',
  'sk.req.neon':'ニアミス累計 100回','sk.req.ember':'特殊ゾーン 25回クリア',
- 'sk.req.gold':'ベストスコア 8,000',
+ 'sk.req.gold':'ベストスコア 40,000',
  'sk.prog.dist':'{0} / 3,000m','sk.prog.near':'{0} / 100回',
- 'sk.prog.zone':'{0} / 25回','sk.prog.best':'{0} / 8,000',
+ 'sk.prog.zone':'{0} / 25回','sk.prog.best':'{0} / 40,000',
  'sk.locked':'（未解放）','sk.selected':'<b>{0}</b> を選択中',
  'sk.note':'<b>{0}</b> — {1}（現在 {2}）',
  'm.prefix':'1ランで{0}','m.near':'ニアミス {0} 回','m.dist':'{0}m 走る',
@@ -550,13 +555,13 @@ en:{
  'r.cause':'<b>{0}</b> — {1}','r.toBest':'<b>{0}</b> points short of your best',
  'r.missionClear':'MISSION CLEAR','r.unlock':'NEW FOX UNLOCKED',
  'rank.S':'Legend of the city','rank.A':'Daybreak runner','rank.B':'Neon regular',
- 'rank.C':'Sunset rookie','rank.D':'Aim for 1,000',
+ 'rank.C':'Sunset rookie','rank.D':'Aim for 5,000','rankup':'RANK {0}',
  'p.eyebrow':'RUN ON HOLD','p.title':'PAUSED','p.score':'SCORE','p.dist':'DISTANCE',
  'sk.req.sunset':'Available from the start','sk.req.frost':'3,000m total distance',
  'sk.req.neon':'100 near misses in total','sk.req.ember':'Clear 25 event zones',
- 'sk.req.gold':'Best score of 8,000',
+ 'sk.req.gold':'Best score of 40,000',
  'sk.prog.dist':'{0} / 3,000m','sk.prog.near':'{0} / 100',
- 'sk.prog.zone':'{0} / 25','sk.prog.best':'{0} / 8,000',
+ 'sk.prog.zone':'{0} / 25','sk.prog.best':'{0} / 40,000',
  'sk.locked':' (locked)','sk.selected':'<b>{0}</b> selected',
  'sk.note':'<b>{0}</b> — {1} (now {2})',
  'm.prefix':'In one run: {0}','m.near':'{0} near misses','m.dist':'run {0}m',
@@ -648,7 +653,8 @@ var store={
 var PROF=(function(){
   var d=store.get('prof',null)||{};
   return {dist:d.dist|0,runs:d.runs|0,crystals:d.crystals|0,near:d.near|0,
-          zones:d.zones|0,dailies:d.dailies|0,skin:d.skin||'sunset'};
+          zones:d.zones|0,dailies:d.dailies|0,skin:d.skin||'sunset',
+          unlocked:d.unlocked||[]};
 })();
 function saveProf(){ store.set('prof',PROF); }
 
@@ -665,14 +671,22 @@ var SKINS=[
    req:function(){return PROF.zones>=25;},reqText:function(){return t('sk.req.ember');},
    prog:function(){return t('sk.prog.zone',PROF.zones);}},
   {id:'gold',  name:'GOLD',  fur:0xFFD166,dark:0xC08A1E,cream:0xFFF3D0,
-   req:function(){return (store.get('best',0)|0)>=8000;},reqText:function(){return t('sk.req.gold');},
+   req:function(){return (store.get('best',0)|0)>=40000;},reqText:function(){return t('sk.req.gold');},
    prog:function(){return t('sk.prog.best',(store.get('best',0)|0));}}
 ];
 function skinById(id){
   for(var i=0;i<SKINS.length;i++) if(SKINS[i].id===id) return SKINS[i];
   return SKINS[0];
 }
-function skinOpen(sk){ return !sk.req || sk.req(); }
+/* Unlocks are recorded, not recomputed. A requirement can then be retuned - the
+   GOLD fox went from 8,000 to 40,000 when the score ladder was rebalanced -
+   without taking a fox back off a player who had already earned it. */
+function skinOpen(sk){
+  if(!sk.req) return true;
+  if(PROF.unlocked.indexOf(sk.id)>=0) return true;
+  if(sk.req()){ PROF.unlocked.push(sk.id); saveProf(); return true; }
+  return false;
+}
 
 /* Missions are scoped to a single run so the goal is always readable mid-race.
    The day's three are drawn from the date, so every device sees the same set. */
@@ -767,6 +781,9 @@ var SFX={
   jump:function(){tone(300,760,0.13,'triangle',0.10);},
   land:function(v){tone(150,58,0.13,'sine',0.05+Math.min(0.09,v*0.006)); noise(0.09,0.05,420);},
   combo:function(){tone(700,260,0.22,'triangle',0.08);},
+  fever:function(){tone(660,990,0.12,'square',0.08);
+    setTimeout(function(){tone(990,1320,0.12,'square',0.075);},90);
+    setTimeout(function(){tone(1320,1980,0.26,'square',0.07);},185);},
   slide:function(){noise(0.2,0.1,1400);},
   lane:function(){tone(540,720,0.06,'square',0.045);},
   coin:function(c){tone(720+c*58,1120+c*72,0.09,'square',0.075);},
@@ -1367,6 +1384,17 @@ var GRAV=-34, JUMP_V=12.7, SLIDE_T=0.62;
 var P_HALF=0.42, P_H=1.5, P_SLIDE_H=0.72;
 var SPD_MIN=18, SPD_MAX=46, COMBO_T=3.0, COMBO_MAX=10;
 
+/* The chain used to stop paying before it stopped counting: `heat` - which
+   drives the trail, the road glow and the camera - saturates at x8, and the
+   score per pickup is linear in the combo, so x8, x9 and x10 looked identical
+   and were worth almost the same. FEVER is what the last rung buys. It only
+   accrues while the chain is pinned at the ceiling, it is worth more the longer
+   it is held, and it is gone the instant the chain slips - so the reward is for
+   *keeping* it, which is the hard part. */
+var FEVER_RATE=0.16;   /* multiplier gained per second at the ceiling */
+var FEVER_MAX=1.5;     /* ...capped at 2.5x everything */
+function feverMul(){ return 1+G.fever; }
+
 /* ---- fox animation ----------------------------------------------------
    The old cycle was one sine per leg with the diagonal pairs in step: a trot,
    and a perfectly symmetric one, which reads as a pendulum rather than as
@@ -1432,10 +1460,11 @@ function resetGame(){
     speedPeak:SPD_MIN, shown:false, bdGap:6,
     cause:{act:'DODGE',c:'#B45CE0',hint:''}, tJump:-9, tSlide:-9, count:0,
     heat:0, beat:0, bar:0, sq:0, camDip:0, ghostT:0, prevCombo:1,
+    fever:0, feverPeak:0, feverOn:false, fev:0,
     bestDist:0, recHit:false, recWarn:false, perfect:0, taughtNear:false,
     flip:0, flipTarget:0, lean:0, flips:0,
     airAmt:0, tailA:0.18, tailV:0, tailY:0, tailYV:0, ear:0, knee:0, look:0,
-    tier:0,
+    tier:0, rankIx:0,
     zone:-1, zoneLeft:0, lastZone:-1, nextZone:40, zonesDone:0,
     zoneSpawnIx:-1, zoneSpawnLeft:0, zonePending:false, zoneStartAt:0,
     gapLeft:40, crystalQueue:null, ts:1, slowT:0, shake:0, deadT:0, intro:0, t:0, camRoll:0
@@ -1574,6 +1603,14 @@ function pop(text,cls,big){
 }
 
 /* ============================= scoring ============================= */
+/* Hitting the ceiling is frequent enough that a full banner would wear out its
+   welcome, so it gets the loudest pop the game has plus a flash, and the HUD
+   carries the running multiplier from then on. */
+function feverStart(){
+  pop('MAX CHAIN','gold',true);
+  flash('#FFD166',0.26); shake(0.3); SFX.fever();
+  burst(G.px,1.1,0,0xFFD166,18,6);
+}
 function addCombo(){
   G.combo=Math.min(COMBO_MAX,G.combo+1);
   G.comboT=COMBO_T;
@@ -1581,7 +1618,7 @@ function addCombo(){
 }
 function collect(p){
   addCombo(); G.crystals++;
-  var pts=10*G.combo; G.score+=pts;
+  var pts=Math.round(10*G.combo*feverMul()); G.score+=pts;
   SFX.coin(G.combo);
   burst(p.x,p.y,p.z,0xFFD166,9,4.5);
   pop('+'+pts,'gold');
@@ -1600,7 +1637,7 @@ function nearMiss(clear){
   for(i=0;i<NM_TIERS.length;i++){ if(clear<NM_TIERS[i].max){ nm=NM_TIERS[i]; break; } }
   addCombo(); G.near++;
   if(nm.name==='PERFECT') G.perfect++;
-  var pts=Math.round(25*G.combo*nm.mult); G.score+=pts;
+  var pts=Math.round(25*G.combo*nm.mult*feverMul()); G.score+=pts;
   G.slowT=nm.slow; shake(nm.shake); SFX.near();
   flash(nm.name==='PERFECT'?'#FFD166':'#6EE7F9',nm.name==='PERFECT'?0.3:0.22);
   pop(nm.name+' +'+pts,nm.cls,nm.big);
@@ -1628,6 +1665,12 @@ function tierUp(){
   flash('#FFD166',0.3); shake(0.45); SFX.record();
   burst(G.px,1.2,0,0xFFD166,20,6);
   uTier.hidden=false; uTier.textContent=t('od.chip',G.tier);
+}
+function rankUp(ix){
+  var r=RANKS[ix];
+  showRec(t('rankup',r.letter),t(r.key),2000,r.color);
+  flash(r.color,0.28); shake(0.4); SFX.record();
+  burst(G.px,1.2,0,0xFFD166,20,6);
 }
 function hitRecord(){
   G.recHit=true;
@@ -1715,10 +1758,11 @@ function activateZone(){
 }
 function endZone(){
   var z=ZONES[G.zone];
-  G.zone=-1; G.zonesDone++; G.score+=z.bonus;
+  var zb=Math.round(z.bonus*feverMul());
+  G.zone=-1; G.zonesDone++; G.score+=zb;
   G.nextZone=150+Math.random()*160;
   hideZoneUi(); SFX.zoneEnd(); flash('#F7EFE6',0.2);
-  pop('ZONE CLEAR +'+z.bonus,'gold');
+  pop('ZONE CLEAR +'+zb,'gold');
 }
 
 var KILL={
@@ -1882,7 +1926,8 @@ app.addEventListener('touchend',function(e){
 var uScore=$('#uScore'), uDist=$('#uDist'), uSpd=$('#uSpd'), uBest=$('#uBest'), uRuns=$('#uRuns');
 var elHud=$('#hud'), elTitle=$('#title'), elOver=$('#over'), elCombo=$('#combo');
 var uTier=$('#uTier');
-var comboN=$('#comboN'), comboFill=$('#comboFill'), elHint=$('#hint'), btnMute=$('#mute');
+var comboN=$('#comboN'), comboFill=$('#comboFill'), feverN=$('#feverN');
+var elHint=$('#hint'), btnMute=$('#mute');
 var uRec=$('#uRec'), elRec=$('#recUi'), recCard=$('#recCard'), recN=$('#recN'), recS=$('#recS');
 var uNear=$('#uNear');
 
@@ -2023,12 +2068,23 @@ function say(msg){ toast.textContent=msg; toast.classList.add('on'); toastT=1.8;
 
 /* ============================= result card ============================= */
 function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+/* One ladder, used both for the rank on the result card and for the promotion
+   banner mid-run, so the two can never drift apart.
+   The old thresholds were measured and found meaningless: a bot making no
+   attempt to chain anything scored 1,601 by 500m (rank C), 7,323 by 1,500m
+   (rank A) and hit the top rank at 2,000m - and that was before FEVER, which
+   multiplies everything by up to 2.5. Every rung now costs several times more. */
+var RANKS=[
+  {min:0,     letter:'D',key:'rank.D',color:'#A093B4'},
+  {min:5000,  letter:'C',key:'rank.C',color:'#F7EFE6'},
+  {min:15000, letter:'B',key:'rank.B',color:'#6EE7F9'},
+  {min:35000, letter:'A',key:'rank.A',color:'#FF7A59'},
+  {min:75000, letter:'S',key:'rank.S',color:'#FFD166'}
+];
+function rankIxOf(s){ var i=RANKS.length-1; while(i>0&&s<RANKS[i].min) i--; return i; }
 function rankOf(s){
-  if(s>=9000) return {letter:'S',cap:t('rank.S'),color:'#FFD166'};
-  if(s>=5000) return {letter:'A',cap:t('rank.A'),color:'#FF7A59'};
-  if(s>=2500) return {letter:'B',cap:t('rank.B'),color:'#6EE7F9'};
-  if(s>=1000) return {letter:'C',cap:t('rank.C'),color:'#F7EFE6'};
-  return {letter:'D',cap:t('rank.D'),color:'#A093B4'};
+  var r=RANKS[rankIxOf(s)];
+  return {letter:r.letter,cap:t(r.key),color:r.color};
 }
 function rng(seed){ var s=seed>>>0||1; return function(){ s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0; return s/4294967296; }; }
 function chamfer(x,c,X,Y,W2,H2,k){
@@ -2100,7 +2156,9 @@ function drawCard(){
   ls(x,'0.2em');
   x.fillStyle='#A093B4'; x.font='700 13px "Chivo Mono",monospace';
   x.fillText('BIOME '+BIOMES[biomeIx].name+'  /  PERFECT '+G.perfect+'  /  FLIPS '+G.flips+'  /  CRYSTALS '+G.crystals
-    +'  /  ZONES '+G.zonesDone+(G.tier>0?('  /  OVERDRIVE x'+G.tier):'')+'  /  '+skinById(PROF.skin).name,64,600);
+    +'  /  ZONES '+G.zonesDone+(G.tier>0?('  /  OVERDRIVE x'+G.tier):'')
+    +(G.feverPeak>0?('  /  FEVER x'+(1+G.feverPeak).toFixed(1)):'')
+    +'  /  '+skinById(PROF.skin).name,64,600);
   x.textAlign='right';
   x.fillText(new Date().toISOString().slice(0,10).replace(/-/g,'.'),1136,600);
   x.textAlign='left'; ls(x,'0em');
@@ -2255,6 +2313,7 @@ function renderResult(){
   /* how deep the run got is the thing worth bragging about, so it goes on the
      result panel and the share card rather than only in the HUD */
   if(G.tier>0) rows.push(['OVERDRIVE','x'+G.tier]);
+  if(G.feverPeak>0) rows.push(['BEST FEVER','x'+(1+G.feverPeak).toFixed(1)]);
   ovStats.innerHTML='';
   for(var i=0;i<rows.length;i++){
     var d=D.createElement('div'); d.className='ovs';
@@ -2307,6 +2366,19 @@ function step(raw){
   G.heat+=(heatT-G.heat)*Math.min(1,raw*(heatT>G.heat?3.5:7));
   if(G.combo===1&&G.prevCombo>=3&&G.state==='run') SFX.combo();
   G.prevCombo=G.combo;
+
+  /* FEVER: the reward for pinning the chain at the ceiling */
+  if(G.state==='run'&&G.combo>=COMBO_MAX){
+    if(!G.feverOn){ G.feverOn=true; feverStart(); }
+    G.fever=Math.min(FEVER_MAX,G.fever+raw*FEVER_RATE);
+    if(G.fever>G.feverPeak) G.feverPeak=G.fever;
+  } else if(G.feverOn){
+    G.feverOn=false;
+    if(G.fever>0.2) pop('CHAIN LOST','dim');
+    G.fever=0;
+  } else if(G.fever>0) G.fever=0;
+  /* smoothed copy so the visuals ramp instead of snapping */
+  G.fev+=((G.feverOn?G.fever/FEVER_MAX:0)-G.fev)*Math.min(1,raw*(G.feverOn?3:9));
   var tgt=1;
   if(G.state==='dead'&&G.deadT<0.2) tgt=0.09;
   else if(G.slowT>0) tgt=0.42;
@@ -2321,9 +2393,13 @@ function step(raw){
     if(zoneIs('surge')) G.speed*=1.3;
     if(G.speed>G.speedPeak) G.speedPeak=G.speed;
     adv=G.speed*dt; G.dist+=adv;
-    G.score+=adv*(zoneIs('surge')?2:1)*(1+G.tier*TIER_SCORE);
+    G.score+=adv*(zoneIs('surge')?2:1)*(1+G.tier*TIER_SCORE)*feverMul();
     var tn=tierAt(G.dist);
     if(tn>G.tier){ G.tier=tn; tierUp(); }
+    /* the rank on the result card used to be the first time you heard about it;
+       now the promotion lands the instant it is earned */
+    var ri=rankIxOf(G.score);
+    if(ri>G.rankIx){ G.rankIx=ri; rankUp(ri); }
     if(G.combo>1){ G.comboT-=dt; if(G.comboT<=0) G.combo=1; }
     var want=biomeAt(G.dist);
     if(want!==biomeIx) applyBiome(want,false);
@@ -2498,7 +2574,7 @@ function step(raw){
 
   if(G.state==='run'&&G.heat>0.12&&!REDUCE){
     G.ghostT-=raw;
-    if(G.ghostT<=0){ ghostPuff(); G.ghostT=0.06; }
+    if(G.ghostT<=0){ ghostPuff(); G.ghostT=0.06-G.fev*0.025; }
   }
   for(i=0;i<ghosts.length;i++){
     var gh=ghosts[i];
@@ -2506,7 +2582,7 @@ function step(raw){
     gh.life-=raw;
     if(gh.life<=0){ gh.obj.visible=false; gh.mat.opacity=0; continue; }
     gh.obj.position.z+=adv;
-    gh.mat.opacity=(gh.life/gh.max)*0.13*G.heat;
+    gh.mat.opacity=(gh.life/gh.max)*(0.13+G.fev*0.10)*G.heat;
   }
   for(i=0;i<rings.length;i++){
     var rg=rings[i];
@@ -2590,7 +2666,7 @@ function step(raw){
     st.material.opacity=(G.state==='run')?sn*0.5:0;
   }
 
-  edgeMat.opacity=Math.min(0.95,G.heat*0.5+G.beat*(0.16+G.heat*0.3)+G.bar*0.1);
+  edgeMat.opacity=Math.min(0.95,G.heat*0.5+G.fev*0.22+G.beat*(0.16+G.heat*0.3)+G.bar*0.1);
   sun.scale.setScalar(1+G.beat*0.02+G.bar*0.02);
   M_LAMP.color.setRGB(0.26+0.74*G.bar,0.05+0.17*G.bar,0.11+0.23*G.bar);
 
@@ -2599,7 +2675,7 @@ function step(raw){
   var camZ=7.6+pull-sn*0.5, camY=3.4+pull*0.42+G.py*0.2-G.camDip;
   var sh=REDUCE?0:G.shake;
   G.shake*=Math.pow(0.02,raw);
-  camera.fov=66+sn*5+(G.slowT>0?-3:0)-G.beat*0.5*(0.4+G.heat);
+  camera.fov=66+sn*5+G.fev*2.4+(G.slowT>0?-3:0)-G.beat*0.5*(0.4+G.heat);
   camera.updateProjectionMatrix();
   if(G.state==='dead'||G.state==='over'){
     G.camRoll+=raw;
@@ -2637,6 +2713,10 @@ function step(raw){
       comboN.textContent='x'+G.combo;
       comboFill.style.transform='scaleX('+Math.max(0,G.comboT/COMBO_T)+')';
     } else elCombo.classList.remove('on');
+    /* outside the combo gate: the chip has to clear the moment the chain breaks,
+       not the next time the combo happens to climb back above 1 */
+    if(G.feverOn){ feverN.hidden=false; feverN.textContent='FEVER \u00d7'+feverMul().toFixed(1); }
+    else feverN.hidden=true;
   }
   if(flashT>0){
     flashT-=raw;
