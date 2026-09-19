@@ -11,10 +11,26 @@
 | `/mail-draft` | 「◯◯さんに△△のメール作って」 | 定型6パターンのGmail下書き作成。**送信はしない** |
 | `/kigen` | 「期限まとめて」 | メールから期限を抽出して一覧化。カレンダー登録は確認後 |
 
+## 外部脳(Obsidian)
+
+`obsidian/` がそのまま Obsidian の Vault。セッションを跨いで文脈・決定事項・ナレッジを保持する。
+
+| フォルダ | 入れるもの |
+|---|---|
+| `obsidian/Daily/` | その日の作業内容・引き継ぎ事項 |
+| `obsidian/Decision/` | 判断・決定とその理由 |
+| `obsidian/Knowledge/` | 解決した課題・エラー対処法・手順 |
+| `obsidian/Mistakes/` | ミスの内容と正しい対処法(再発防止) |
+
+- ローカルでは Obsidian で `obsidian/` フォルダを Vault として開く
+- Claude はセッション開始時に Vault を読み、作業中に自動で記録する。手順は [CLAUDE.md](CLAUDE.md)
+- **記録はコミット・pushして初めて次のセッションに引き継がれる**
+
 ## ドキュメント
 
 | ファイル | 内容 |
 |---|---|
+| [CLAUDE.md](CLAUDE.md) | 外部脳の読み取り・記録・ミス管理ルール(セッション開始時に自動で読まれる) |
 | [docs/gyomu-map.md](docs/gyomu-map.md) | 業務マップ、自動化候補17個、優先順位 |
 | [docs/checklists.md](docs/checklists.md) | 書類・送信前チェックリスト(申請/銀行/上棟/見積/引き継ぎ) |
 | [docs/unyo-rule.md](docs/unyo-rule.md) | ファイル命名規則、毎日のルーチン、AIに任せる範囲の線引き |
