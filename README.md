@@ -19,6 +19,7 @@
 | [docs/checklists.md](docs/checklists.md) | 書類・送信前チェックリスト(申請/銀行/上棟/見積/引き継ぎ) |
 | [docs/unyo-rule.md](docs/unyo-rule.md) | ファイル命名規則、毎日のルーチン、AIに任せる範囲の線引き |
 | [docs/next-steps.md](docs/next-steps.md) | 次に作るものの仕様書(Notion案件DB、週次レビュー自動化) |
+| [vault/](vault/README.md) | Obsidian外部脳Vault(案件・期限・取引先・ナレッジ・個人)。Obsidianで `vault/` を開くだけで使える |
 
 ## 安全ルール(要約)
 

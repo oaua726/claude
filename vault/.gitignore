@@ -1,0 +1,6 @@
+# Obsidianの端末ごとの状態(共有しない)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+.obsidian/plugins/*/data.json
+.trash/
