@@ -1132,54 +1132,61 @@ player.add(rig); scene.add(player);
         voxel editor would, so no part is arbitrarily out of step with another.
    Part count is unchanged - this is the same boxes, resized and repositioned. */
 var torso=new THREE.Group(); rig.add(torso);
-var headG=new THREE.Group(); headG.position.set(0,1.00,-0.16); torso.add(headG);
+var headG=new THREE.Group(); headG.position.set(0,0.94,-0.20); torso.add(headG);
 
 function part(g,m,x,y,z,parent){ var me=new THREE.Mesh(g,m); me.position.set(x,y,z);
   (parent||torso).add(me); return me; }
 /* Every seam below is worked out from the neighbouring box's faces rather than
    eyeballed, because eyeballing is what buried the ears inside the skull and
    left a gap between the head and the shoulders.
-     body  spans y 0.36..0.88, z -0.20..0.48
-     head  spans y 0.76..1.28, z -0.55..0.03   -> overlaps the body in both axes
-     ears  sit ON the head's top face (y 1.36), not inside it
+     body  spans y 0.32..0.88, z -0.15..0.47
+     head  spans y 0.64..1.24, z -0.46..0.06   -> 0.24 of vertical overlap, same
+                                                  width, so the two read as one
+     ears  sit ON the head's top face, not inside it
      tail  starts inside the body's rear, so it cannot look bolted on          */
-var body=part(new THREE.BoxGeometry(0.76,0.52,0.68),M.fur,0,0.62,0.14);
-/* belly: narrower and shallower than the body, dropping just below it, so it
-   reads from the side and can never poke out of the flanks */
-part(new THREE.BoxGeometry(0.56,0.16,0.50),M.cream,0,0.40,0.12);
-/* the head is the largest single piece - that is the whole point */
-/* wider than it is tall: a tall head reads as a box on a stick, a broad one
-   reads as a cub */
-var head=part(new THREE.BoxGeometry(0.72,0.52,0.58),M.fur,0,0.02,-0.10,headG);
-part(new THREE.BoxGeometry(0.34,0.22,0.20),M.cream,0,-0.08,-0.47,headG);
+/* Head and body are the SAME WIDTH and overlap by a third of the head's height.
+   Every earlier attempt made them different sizes with a gap between, and the
+   fox read as a stack of separate lumps - most obviously when they were spheres,
+   which have no corners to overlap with. One continuous loaf, with the ears
+   doing all of the character work, is both the most minimal construction and
+   the most readable one at forty pixels. */
+var body=part(new THREE.BoxGeometry(0.72,0.56,0.62),M.fur,0,0.60,0.16);
+/* The belly stripe is gone: it sat under the body where the chase camera can
+   never see it, so it was a part earning nothing. The cream now appears only
+   where it reads - the muzzle and the tail tip. */
+var head=part(new THREE.BoxGeometry(0.72,0.60,0.52),M.fur,0,0,0,headG);
+part(new THREE.BoxGeometry(0.34,0.22,0.16),M.cream,0,-0.14,-0.32,headG);
 /* short and set wide, so they read as two ears rather than one pointed hat */
-var earL=part(new THREE.ConeGeometry(0.20,0.30,4),M.furDark,-0.22,0.28,-0.12,headG);
-var earR=part(new THREE.ConeGeometry(0.20,0.30,4),M.furDark, 0.22,0.28,-0.12,headG);
-part(new THREE.BoxGeometry(0.14,0.14,0.06),M.dark,-0.18,0.06,-0.40,headG);
-part(new THREE.BoxGeometry(0.14,0.14,0.06),M.dark, 0.18,0.06,-0.40,headG);
+var earL=part(new THREE.ConeGeometry(0.19,0.28,4),M.furDark,-0.21,0.30,-0.04,headG);
+var earR=part(new THREE.ConeGeometry(0.19,0.28,4),M.furDark, 0.21,0.30,-0.04,headG);
+part(new THREE.BoxGeometry(0.13,0.13,0.05),M.dark,-0.17,0.02,-0.27,headG);
+part(new THREE.BoxGeometry(0.13,0.13,0.05),M.dark, 0.17,0.02,-0.27,headG);
 /* Move the cone UP by half its height so it stands on its pivot instead of
    hanging from it. Translating the other way - which is what was here - buried
    both ears inside the skull and left the silhouette with no ears at all; the
    old rig only got away with it by putting the pivot above the head. */
-earL.geometry.translate(0,0.15,0); earL.position.y=0.28;
-earR.geometry.translate(0,0.15,0); earR.position.y=0.28;
+earL.geometry.translate(0,0.14,0); earL.position.y=0.30;
+earR.geometry.translate(0,0.14,0); earR.position.y=0.30;
 
 /* Tail: short, thick, carried up, and rooted inside the rump. Held straight out
    it read as a plank as long as the body; this is a brush. */
-var tail=new THREE.Group(); tail.position.set(0,0.64,0.40); torso.add(tail);
-var tailM=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.28,0.44),M.fur); tailM.position.z=0.22; tail.add(tailM);
-var tailEnd=new THREE.Group(); tailEnd.position.z=0.42; tail.add(tailEnd);
-/* the pale cap is an accent, not a billboard: thick enough to read at speed,
-   thin enough that it does not sit on top of the whole rump from behind */
-var tailTip=new THREE.Mesh(new THREE.BoxGeometry(0.32,0.32,0.22),M.cream); tailTip.position.z=0.11; tailEnd.add(tailTip);
+var tail=new THREE.Group(); tail.position.set(0,0.62,0.38); torso.add(tail);
+var tailM=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.26,0.40),M.fur); tailM.position.z=0.20; tail.add(tailM);
+var tailEnd=new THREE.Group(); tailEnd.position.z=0.38; tail.add(tailEnd);
+/* the pale cap is an accent, not a billboard: big enough to read at speed, small
+   enough that it does not sit on top of the whole rump from behind */
+var tailTip=new THREE.Mesh(new THREE.BoxGeometry(0.26,0.26,0.20),M.cream); tailTip.position.z=0.10; tailEnd.add(tailTip);
 
+/* short and thick. Thin legs read as spindly at this size, and a cub's are
+   stubby anyway */
+function legGeo(){ return new THREE.BoxGeometry(0.20,0.28,0.20); }
 var legs=[
-  part(new THREE.BoxGeometry(0.24,0.34,0.24),M.furDark,-0.22,0.3,-0.06,rig),
-  part(new THREE.BoxGeometry(0.24,0.34,0.24),M.furDark, 0.22,0.3,-0.06,rig),
-  part(new THREE.BoxGeometry(0.24,0.34,0.24),M.furDark,-0.22,0.3, 0.34,rig),
-  part(new THREE.BoxGeometry(0.24,0.34,0.24),M.furDark, 0.22,0.3, 0.34,rig)
+  part(legGeo(),M.furDark,-0.19,0.3,-0.02,rig),
+  part(legGeo(),M.furDark, 0.19,0.3,-0.02,rig),
+  part(legGeo(),M.furDark,-0.19,0.3, 0.30,rig),
+  part(legGeo(),M.furDark, 0.19,0.3, 0.30,rig)
 ];
-for(var li=0;li<legs.length;li++){ legs[li].geometry.translate(0,-0.17,0); legs[li].position.y=0.36; }
+for(var li=0;li<legs.length;li++){ legs[li].geometry.translate(0,-0.14,0); legs[li].position.y=0.32; }
 
 var blob=new THREE.Mesh(new THREE.CircleGeometry(0.62,10),
   new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.3,depthWrite:false}));
@@ -2588,8 +2595,8 @@ function step(raw){
        the fox is looking at the tarmac it is about to hit - but it also has to
        come *down*, or the ears go straight through the bar it is passing under */
     headG.rotation.x=-torso.rotation.x*0.7-ar*0.18*av+sl*0.16;
-    headG.position.y=1.00-bounce*0.4-sn2*0.08-sl*0.24;
-    headG.position.z=-0.16-sn2*0.06-sl*0.20;   /* reaches forward at speed */
+    headG.position.y=0.94-bounce*0.4-sn2*0.08-sl*0.22;
+    headG.position.z=-0.20-sn2*0.06-sl*0.18;   /* reaches forward at speed */
     headG.rotation.z=G.look*0.55;
 
     /* --- ears: laid back by speed, flicked up by an impact --- */
@@ -2599,9 +2606,11 @@ function step(raw){
 
     /* --- tail: a damped spring chasing the body, not a sine. It is the one part
            that should always be a beat behind everything else. --- */
-    /* negative pitches the brush upwards; a fox carries its tail high, and it is
-       the one silhouette cue the chase camera never loses */
-    var tTgt=-0.46+bounce*2.6-av*ar*0.95+sl*0.62;
+    /* A little lift, not a flag. Carried high it sat as a bright square in the
+       middle of the back from the chase camera - a sticker, not a tail. Trailing
+       it keeps the fox's outline clean and still shows the pale tip whenever the
+       fox banks into a lane change or leaves the ground. */
+    var tTgt=-0.15+bounce*2.6-av*ar*0.95+sl*0.50;
     G.tailYV+=((tTgt-G.tailA)*150-G.tailYV*17)*dt;
     G.tailA+=G.tailYV*dt;
     var yTgt=(G.px-tx)*0.70+G.look*0.5;
